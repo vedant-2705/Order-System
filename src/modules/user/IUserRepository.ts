@@ -1,7 +1,14 @@
+/**
+ * @module IUserRepository
+ * @description Repository interface for the `users` table.
+ *
+ * Injected by `USER_REPOSITORY_TOKEN`.
+ * Token is co-located with the interface  no separate token file needed.
+ */
 import { Knex } from "knex";
 import { User } from "./types.js";
 
-// Token lives next to the interface - no separate tokens file needed.
+/** DI injection token for {@link IUserRepository}. */
 export const USER_REPOSITORY_TOKEN = Symbol("IUserRepository");
 
 export interface IUserRepository {

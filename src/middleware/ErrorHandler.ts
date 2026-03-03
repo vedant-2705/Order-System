@@ -1,3 +1,23 @@
+/**
+ * @module ErrorHandler
+ * @description Global Express error-handling middleware.
+ *
+ * Must be registered **last** in the middleware chain so it catches errors
+ * thrown by any preceding middleware or route handler.
+ *
+ * Error classification priority:
+ *   1. `ZodError`          -> 422 with structured field-level validation detail
+ *   2. `AppError`          -> HTTP status from the error's own `statusCode`
+ *   3. pg driver error     -> mapped through `DbErrorHelper` via `DB_ERROR_MAP`
+ *   4. Everything else     -> 500 Internal Server Error
+ *
+ * All responses follow the RFC 7807 Problem Details shape built by
+ * `ResponseHelper.errorResponse()`.
+ *
+ * @see helpers/errors/AppErrorHelper.ts
+ * @see helpers/errors/DbErrorHelper.ts
+ * @see helpers/errors/ZodErrorHelper.ts
+ */
 import { Request, Response, NextFunction } from "express";
 import { ZodError } from "zod";
 import { StatusCodes } from "http-status-codes";
@@ -25,13 +45,13 @@ export function errorHandler(
     res: Response,
     _next: NextFunction,
 ): void {
-    // 1. Zod validation error
+    // Zod validation error
     if (err instanceof ZodError) {
         handleZodError(err, req, res);
         return;
     }
 
-    // 2. Known application error (NotFoundError, InsufficientBalanceError etc.)
+    // Known application error (NotFoundError, InsufficientBalanceError etc.)
     if (err instanceof AppError) {
         // Only log server errors  4xx are expected, not bugs
         if (err.statusCode >= 500) {
@@ -45,7 +65,7 @@ export function errorHandler(
         return;
     }
 
-    // 3. pg driver error - has a .code property with PostgreSQL error code
+    // pg driver error - has a .code property with PostgreSQL error code
     const dbErr = err as Error & { code?: string };
     const pgCodes = Object.values(DbErrorCodes) as string[];
     if (dbErr.code && pgCodes.includes(dbErr.code)) {
@@ -54,7 +74,7 @@ export function errorHandler(
         return;
     }
 
-    // 4. Unexpected error - log everything, respond with 500
+    // Unexpected error - log everything, respond with 500
     logger.error("[UnhandledError]", {
         message: err.message,
         stack: err.stack,

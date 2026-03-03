@@ -1,3 +1,19 @@
+/**
+ * @module ProductRepository
+ * @description Data-access layer for the `products` table.
+ *
+ * Key design decisions:
+ *   - `findByIdsForUpdate` uses `ORDER BY id ASC` before acquiring locks to
+ *     guarantee a consistent lock-acquisition order across all transactions.
+ *     This prevents deadlocks when two requests order the same products in
+ *     different sequences.
+ *   - `deductStock` uses a conditional update (`WHERE stock >= qty`) as a
+ *     server-side guard.  If zero rows are affected, the caller knows stock
+ *     was insufficient and can roll back immediately.
+ *
+ * @see shared/BaseRepository.ts  for inherited query helpers
+ * @see modules/product/IProductRepository.ts
+ */
 import "reflect-metadata";
 import { inject, injectable } from "tsyringe";
 import { Knex } from "knex";
@@ -6,6 +22,14 @@ import { BaseRepository } from "shared/BaseRepository.js";
 import { IProductRepository } from "./IProductRepository.js";
 import { Product } from "./types.js";
 
+/**
+ * Concrete repository for the `products` table.
+ *
+ * @remarks
+ * Decorated with `@injectable()` as this repo is currently registered via
+ * `container.registerSingleton()` in `product/container.ts`.  Consider
+ * changing to `@singleton()` for consistency with other repositories.
+ */
 @injectable()
 export class ProductRepository
     extends BaseRepository<Product>
@@ -20,6 +44,12 @@ export class ProductRepository
         super(dbProvider);
     }
 
+    /**
+     * Finds an active product by its unique SKU.
+     *
+     * @param sku - The stock-keeping unit identifier.
+     * @returns The product, or `null` if not found or soft-deleted.
+     */
     async findBySku(sku: string): Promise<Product | null> {
         const row = await this.query()
             .where({ sku })
@@ -27,10 +57,27 @@ export class ProductRepository
         return row ?? null;
     }
 
+    /**
+     * Returns all non-deleted products that have at least 1 unit in stock.
+     *
+     * @returns Array of in-stock products; empty array if none.
+     */
     async findAllActive(): Promise<Product[]> {
         return this.query().where("stock", ">", 0);
     }
 
+    /**
+     * Fetches multiple products and acquires `SELECT ... FOR UPDATE` locks.
+     *
+     * @remarks
+     * `ORDER BY id ASC` enforces a consistent lock ordering so that two
+     * concurrent transactions that request overlapping product sets always
+     * acquire locks in the same order  preventing deadlocks.
+     *
+     * @param ids - Array of product IDs to lock and retrieve.
+     * @param trx - The active transaction that will hold the locks.
+     * @returns Array of locked product rows (only non-deleted ones).
+     */
     async findByIdsForUpdate(
         ids: number[],
         trx: Knex.Transaction,
@@ -41,6 +88,13 @@ export class ProductRepository
             .forUpdate();
     }
 
+    /**
+     * Inserts a new product row.
+     *
+     * @param data - Partial product fields to insert.
+     * @param trx  - Optional transaction client.
+     * @returns The newly created product row.
+     */
     async create(
         data: Partial<Product>,
         trx?: Knex.Transaction,
@@ -50,6 +104,14 @@ export class ProductRepository
         return row;
     }
 
+    /**
+     * Updates product fields.
+     *
+     * @param id   - Primary key of the product to update.
+     * @param data - Partial product fields to change.
+     * @param trx  - Optional transaction client.
+     * @returns The updated product, or `null` if not found.
+     */
     async update(
         id: number,
         data: Partial<Product>,
@@ -63,8 +125,22 @@ export class ProductRepository
         return row ?? null;
     }
 
-    // WHERE stock >= qty prevents deducting below zero gracefully.
-    // rowsAffected === 0 means stock was insufficient -> caller rolls back.
+    /**
+     * Atomically deducts stock using a conditional DB update.
+     *
+     * @remarks
+     * The `WHERE stock >= qty` condition acts as an optimistic guard:
+     * if another transaction has already decremented stock below `qty`,
+     * this update affects 0 rows and returns `false`  the caller should
+     * throw `INSUFFICIENT_STOCK` and roll back.
+     *
+     * DB-side arithmetic (`stock - qty`) is used to avoid read-modify-write.
+     *
+     * @param id  - Primary key of the product.
+     * @param qty - The quantity to subtract from `stock`.
+     * @param trx - The active transaction (required).
+     * @returns `true` if the deduction succeeded; `false` if insufficient stock.
+     */
     async deductStock(
         id: number,
         qty: number,

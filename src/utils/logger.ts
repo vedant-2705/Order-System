@@ -1,3 +1,19 @@
+/**
+ * @module Logger
+ * @description Application-wide structured logger backed by Winston.
+ *
+ * Two exports:
+ *   - `Logger` class   tsyringe-injectable singleton for use inside DI-managed
+ *     classes (repositories, services, use cases).  Inject with `@inject(Logger)`.
+ *   - `logger` object  standalone Winston instance for use in configuration files
+ *     and bootstrap code that runs before the DI container is initialised
+ *     (e.g. `app.ts`, `knexfile.ts`).
+ *   - `LOGGER`         DI injection token for the `Logger` class.
+ *
+ * Log levels:
+ *   production  -> info  (excludes debug noise in prod)
+ *   development -> debug (full query and context logging)
+ */
 import "reflect-metadata";
 import { singleton } from "tsyringe";
 import winston, { Logger as WinstonLogger } from "winston";
@@ -10,6 +26,17 @@ import winston, { Logger as WinstonLogger } from "winston";
 //   constructor(@inject(Logger) private logger: Logger) {}
 //   this.logger.info('Order created', { orderId });
 
+/**
+ * Injectable structured logger that wraps a Winston instance.
+ *
+ * @remarks
+ * `@singleton()` guarantees one Winston logger for the entire process.
+ * Inject this class into any DI-managed class that needs logging.
+ *
+ * @example
+ * constructor(@inject(Logger) private readonly logger: Logger) {}
+ * this.logger.info('Order created', { orderId, total });
+ */
 @singleton()
 export class Logger {
     private readonly _logger: WinstonLogger;
@@ -50,9 +77,14 @@ export class Logger {
     }
 }
 
-//  Standalone instance for use outside DI context 
-// Used in src/index.ts before the container is bootstrapped,
-// and in knexfile.ts / other config files that can't use DI.
+/**
+ * Standalone Winston logger for use outside the DI container.
+ *
+ * @remarks
+ * Used in `app.ts` before `registerDependencies()` is called,
+ * and in configuration files (`knexfile.ts`) that cannot use DI.
+ * Shares the same format and level settings as the injected `Logger` class.
+ */
 export const logger = winston.createLogger({
     level: process.env.NODE_ENV === "production" ? "info" : "debug",
     format: winston.format.combine(
@@ -68,4 +100,5 @@ export const logger = winston.createLogger({
     transports: [new winston.transports.Console()],
 });
 
+/** DI injection token for the {@link Logger} class. */
 export const LOGGER = Symbol.for("Logger");

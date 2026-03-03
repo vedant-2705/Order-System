@@ -1,6 +1,18 @@
+/**
+ * @module IProductRepository
+ * @description Repository interface for the `products` table.
+ *
+ * Injected by `PRODUCT_REPOSITORY_TOKEN`.
+ *
+ * Concurrency contract:
+ *   - Before deducting stock, call `findByIdsForUpdate()` to acquire row locks.
+ *   - `deductStock()` returns `false` (not throw) when stock is insufficient
+ *     so the caller can decide whether to throw or retry.
+ */
 import { Knex } from "knex";
 import { Product } from "./types.js";
 
+/** DI injection token for {@link IProductRepository}. */
 export const PRODUCT_REPOSITORY_TOKEN = Symbol("IProductRepository");
 
 export interface IProductRepository {
@@ -8,8 +20,10 @@ export interface IProductRepository {
     findBySku(sku: string): Promise<Product | null>;
     findAllActive(): Promise<Product[]>;
 
-    // Locks rows FOR UPDATE  prevents concurrent stock deductions.
-    // ORDER BY id ensures consistent lock ordering -> prevents deadlocks.
+    /**
+     * Fetches products and acquires `FOR UPDATE` row locks.
+     * `ORDER BY id ASC` enforces consistent lock ordering to prevent deadlocks.
+     */
     findByIdsForUpdate(
         ids: number[],
         trx: Knex.Transaction,
@@ -22,7 +36,10 @@ export interface IProductRepository {
         trx?: Knex.Transaction,
     ): Promise<Product | null>;
 
-    // Returns true if deduction succeeded, false if insufficient stock.
+    /**
+     * Decrements `stock` by `qty` if `stock >= qty`.
+     * Returns `true` on success, `false` if insufficient stock.
+     */
     deductStock(
         id: number,
         qty: number,

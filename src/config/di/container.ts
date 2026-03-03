@@ -1,3 +1,13 @@
+/**
+ * @module container
+ * @description Root dependency injection container.
+ *
+ * Single entry point for all tsyringe registrations.
+ * Called once at application startup before any `container.resolve()` call.
+ *
+ * Each feature module owns its own `container.ts` file to keep this file clean.
+ * They are imported here solely to trigger their registrations.
+ */
 import "reflect-metadata";
 import { container } from "tsyringe";
 import { Logger, LOGGER, logger } from "utils/logger.js";
@@ -10,28 +20,26 @@ import { registerAuditLogModule } from "modules/audit/container.js";
 import { registerWalletModule } from "modules/wallet/container.js";
 import { registerOrderItemsModule } from "modules/order-items/container.js";
 
-//  Root Container 
-// Single entry point for all DI registration.
-// Called once at application startup in src/index.ts.
-//
-// Registration order matters for dependencies:
-//   1. Infrastructure (DB, logger) - no dependencies
-//   2. Repositories                - depend on DB
-//   3. Services                    - depend on repositories
-//   4. Use cases                   - depend on services + repositories
-//   5. Controllers                 - depend on use cases
-//
-// Each module has its own container file (OrderContainer, WalletContainer)
-// to keep this file clean. They're imported here to trigger registration.
 
+/**
+ * Registers all application dependencies into the tsyringe container.
+ *
+ * @remarks
+ * Must be called once at process startup before any `container.resolve()`
+ * or `@inject()` resolution occurs.  All `@singleton()` classes are
+ * created lazily on first resolution, but they must be registered here first.
+ *
+ * Delegates to each module's own `registerXxxModule()` to keep this file
+ * from growing unbounded as new feature modules are added.
+ */
 export function registerDependencies(): void {
-    //  Infrastructure 
-    // DatabaseProvider is @singleton() - tsyringe auto-registers it.
-    // Calling register() here is optional but makes it explicit and
-    // ensures it's available before any repository tries to use it.
+    // Infrastructure registered first - all other registrations depend on these.
+    // DatabaseProvider is @singleton() so tsyringe could auto-register it,
+    // but explicit registration here makes the intent clear and ensures
+    // it is always available before any repository tries to consume it.
     container.registerSingleton(LOGGER, Logger);
     container.registerSingleton(DATABASE_PROVIDER, DatabaseProvider);
-    
+
     logger.info("[DI] Infrastructure registered");
 
     registerUserModule();
@@ -42,13 +50,19 @@ export function registerDependencies(): void {
     registerWalletTransactionModule();
     registerAuditLogModule();
 
-
     logger.info("[DI] All dependencies registered");
 }
 
-//  Resolve helper 
-// Thin wrapper around container.resolve() for cleaner call sites.
-// Usage: resolve(OrderController)
+/**
+ * Thin wrapper around `container.resolve()` for clean call sites.
+ *
+ * @param token - The class constructor to resolve from the container.
+ * @returns The singleton instance registered for the given token.
+ *
+ * @example
+ * const db = resolve(DatabaseProvider);
+ * await db.ping();
+ */
 export function resolve<T>(token: new (...args: any[]) => T): T {
     return container.resolve(token);
 }

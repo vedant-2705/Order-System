@@ -1,3 +1,30 @@
+/**
+ * @module CreateOrderUseCase
+ * @description Orchestrates the complete, atomic order creation flow.
+ *
+ * This use case owns the transaction and the locking strategy.
+ * It delegates validation, persistence, and wallet deduction to
+ * focused single-responsibility services.
+ *
+ * Execution phases (order must not change):
+ *
+ * ```
+ * LOCK     wallet row + product rows     (FOR UPDATE, consistent lock order)
+ * VALIDATE stock levels + compute total  (reads are safe after locks)
+ * WRITE    order + items + wallet ledger + stock deduction  (all atomic)
+ * COMMIT   audit trigger fires on every write inside withAuditContext()
+ * ```
+ *
+ * Why this order?
+ *   - Acquiring locks before reading prevents TOCTOU races.
+ *   - Consistent lock ordering (wallet -> products by ascending id) prevents
+ *     deadlocks when two concurrent requests target overlapping products.
+ *
+ * @see modules/orders/services/OrderValidationService.ts
+ * @see modules/orders/services/OrderPersistenceService.ts
+ * @see modules/wallet/services/WalletDeductionService.ts
+ * @see utils/audit/WithAuditContext.ts
+ */
 import "reflect-metadata";
 import { injectable, inject } from "tsyringe";
 import { DatabaseProvider } from "db/DatabaseProvider.js";

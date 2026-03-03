@@ -1,34 +1,52 @@
+/**
+ * @module IAuditLogRepository
+ * @description Read-only repository interface for the `audit_logs` table.
+ *
+ * Injected by `AUDIT_LOG_REPOSITORY_TOKEN`.
+ *
+ * **Design principle  read-only by intent:**
+ * `audit_logs` rows are written exclusively by the PostgreSQL trigger
+ * `audit_log_trigger`  never by application code.  Keeping writes
+ * inside the DB trigger makes the audit trail tamper-proof at the
+ * application layer.
+ *
+ * Consumer read patterns:
+ *   - Admin panel   : "show me all events on order #42"
+ *   - Security dash : "show me everything user #7 did"
+ *   - Compliance    : "show me all DELETEs in the last 30 days"
+ *
+ * @see modules/audit/AuditLogRepository.ts
+ */
 import { AuditLog } from "./types.js";
 
-// Token co-located with interface  no separate tokens file.
+/** DI injection token for {@link IAuditLogRepository}. */
 export const AUDIT_LOG_REPOSITORY_TOKEN = Symbol("IAuditLogRepository");
 
-//  IAuditLogRepository 
-// READ-ONLY repository.
-//
-// audit_logs rows are written exclusively by the PostgreSQL trigger
-// (audit_log_trigger)  never by application code.
-// This prevents the audit trail from being tampered with at the app layer.
-//
-// The only thing the application does with audit_logs is READ them:
-//   - Admin panel: "show me all events on order #42"
-//   - Security dashboard: "show me everything user #7 did"
-//   - Compliance: "show me all DELETEs in the last 30 days"
-
 export interface IAuditLogRepository {
-    // "Show everything that happened to a specific entity"
-    // e.g. findByEntity('orders', 42) -> all INSERT/UPDATE/DELETE on order 42
-    // Hits: idx_audit_logs_entity (entity_type, entity_id)
+    /**
+     * Returns all events for a specific entity.
+     * Uses index `idx_audit_logs_entity` (entity_type, entity_id).
+     *
+     * @example repo.findByEntity('orders', 42) // all events on order 42
+     */
     findByEntity(entityType: string, entityId: number): Promise<AuditLog[]>;
 
-    // "Show everything a specific user did"
-    // Hits: idx_audit_logs_performer (performed_by, created_at DESC)
+    /**
+     * Returns all events performed by a specific user.
+     * Uses index `idx_audit_logs_performer` (performed_by, created_at DESC).
+     */
     findByPerformer(userId: number): Promise<AuditLog[]>;
 
-    // "Show all events of a specific action type"
-    // e.g. findByAction('DELETE') for compliance reports
+    /**
+     * Returns all events of a given action type.
+     *
+     * @example repo.findByAction('DELETE') // compliance: all deletes
+     */
     findByAction(action: string): Promise<AuditLog[]>;
 
-    // "Show recent activity across the system"  admin dashboard
+    /**
+     * Returns the most recent events across the entire system.
+     * Used by the admin dashboard recent-activity feed.
+     */
     findRecent(limit: number): Promise<AuditLog[]>;
 }

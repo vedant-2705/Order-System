@@ -1,3 +1,20 @@
+/**
+ * @module knexfile
+ * @description Knex configuration for all runtime environments.
+ *
+ * Reads connection details exclusively from environment variables so that
+ * no credentials are ever committed to source control.
+ *
+ * Environments:
+ *   development - debug mode on, SSL off, lenient pool settings
+ *   production  - debug mode off, SSL required, same pool formula
+ *
+ * Pool sizing formula:
+ *   max = (num_cores * 2) + 1  (PostgreSQL best-practice)
+ *   e.g. 4-core server -> max 9, rounded up to 10
+ *
+ * @see https://knexjs.org/guide/#configuration-options
+ */
 import type { Knex } from "knex";
 import dotenv from "dotenv";
 import path from "path";

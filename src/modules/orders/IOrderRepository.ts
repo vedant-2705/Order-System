@@ -1,10 +1,15 @@
+/**
+ * @module IOrderRepository
+ * @description Repository interface for the `orders` table.
+ *
+ * Defines the contract that `OrderRepository` implements.
+ * Injected by token `ORDER_REPOSITORY_TOKEN` so the DI container can
+ * swap implementations (e.g. for integration tests with a fake repo).
+ */
 import { Knex } from "knex";
-import {
-    Order,
-    OrderStatus,
-} from "./types.js";
+import { Order, OrderStatus } from "./types.js";
 
-//  IOrderRepository 
+/** DI injection token for {@link IOrderRepository}. */
 export const ORDER_REPOSITORY_TOKEN = Symbol("IOrderRepository");
 
 export interface IOrderRepository {

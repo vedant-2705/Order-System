@@ -1,3 +1,16 @@
+/**
+ * @module OrderValidationService
+ * @description Business validation for the order creation flow.
+ *
+ * Called by `CreateOrderUseCase` **after** all row-level locks have been
+ * acquired (FOR UPDATE), guaranteeing that the data being validated cannot
+ * change between the check and the subsequent write.
+ *
+ * Does NOT open transactions or manage locks  those are the use case’s
+ * responsibility.
+ *
+ * @see modules/orders/use-cases/CreateOrderUseCase.ts
+ */
 import "reflect-metadata";
 import { injectable, inject } from "tsyringe";
 import { Logger } from "utils/logger.js";
@@ -6,6 +19,7 @@ import { AppError } from "shared/errors/AppError.js";
 import { Product } from "modules/product/types.js";
 import { CreateOrderRequestItem } from "modules/order-items/types.js";
 
+/** A single computed order line returned by `OrderValidationService.validate()`. */
 export interface ComputedLineItem {
     productId: number;
     quantity: number;
@@ -13,6 +27,7 @@ export interface ComputedLineItem {
     subtotal: number;
 }
 
+/** Aggregated result of a successful validation pass. */
 export interface ValidationResult {
     lineItems: ComputedLineItem[];
     total: number;

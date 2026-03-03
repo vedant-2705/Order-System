@@ -1,4 +1,20 @@
-import "reflect-metadata"; // MUST be first import  tsyringe requires this
+/**
+ * @module app
+ * @description Express application entry point.
+ *
+ * Responsibilities:
+ *   - Bootstraps the DI container (must happen before any resolution)
+ *   - Mounts core middleware: JSON body parsing, audit context
+ *   - Registers the /health endpoint for load-balancer probes
+ *   - Manages graceful shutdown on SIGTERM / SIGINT
+ *   - Defers route registration until feature modules are built
+ *
+ * Startup sequence:
+ *   1. registerDependencies()  -> all singletons registered
+ *   2. db.ping()              -> verify DB is reachable
+ *   3. app.listen()           -> begin accepting traffic
+ */
+import "reflect-metadata"; // MUST be first import - tsyringe requires this
 import "dotenv/config";
 import express from "express";
 import { registerDependencies, resolve } from "config/di/container.js";
@@ -35,7 +51,14 @@ app.get("/health", async (_req, res) => {
     }
 });
 
-//  Graceful Shutdown 
+/**
+ * Gracefully shuts down the server.
+ *
+ * @remarks
+ * Called on SIGTERM (container orchestrator) and SIGINT (Ctrl+C).
+ * Drains the connection pool before exiting so in-flight queries
+ * are not cut off mid-execution.
+ */
 async function shutdown(): Promise<void> {
     logger.info("Shutting down...");
     const db = resolve(DatabaseProvider);
@@ -46,7 +69,14 @@ async function shutdown(): Promise<void> {
 process.on("SIGTERM", shutdown);
 process.on("SIGINT", shutdown);
 
-//  Start 
+/**
+ * Starts the HTTP server.
+ *
+ * @remarks
+ * Pings the database before calling `app.listen()` so the process
+ * never starts accepting traffic when the DB is unreachable.
+ * Any startup error causes an immediate `process.exit(1)`.
+ */
 async function start(): Promise<void> {
     const db = resolve(DatabaseProvider);
     await db.ping(); // verify DB reachable before accepting traffic

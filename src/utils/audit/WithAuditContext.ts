@@ -1,3 +1,32 @@
+/**
+ * @module WithAuditContext
+ * @description Transaction wrapper that stamps PostgreSQL session variables
+ * so the audit trigger can record who initiated each database write.
+ *
+ * `withAuditContext` is the **single entry point for all database transactions**
+ * in this application.  Calling code never opens a raw `knex.transaction()`.
+ *
+ * How it works:
+ *   1. Opens a Knex transaction.
+ *   2. Reads `{ userId, ip, userAgent, source }` from `AsyncLocalStorage`.
+ *   3. Calls `set_config(name, value, is_local=true)` for each field.
+ *      - `is_local = true` -> identical to `SET LOCAL`: variables are scoped to
+ *        this transaction only and automatically cleared on COMMIT / ROLLBACK.
+ *      - Uses a single batched `SELECT set_config(...), set_config(...)` to
+ *        avoid the extra round-trips that individual `SET LOCAL` statements
+ *        would require.
+ *   4. Invokes the caller's callback with the transaction object.
+ *   5. Commits on success; rolls back (and re-throws) on error.
+ *
+ * Why `SET LOCAL` and not `SET`?
+ *   `SET` persists for the entire session (connection lifetime).  In a
+ *   connection pool a connection is reused across requests, so `SET` would
+ *   leak context from Request A into Request B.  `SET LOCAL` clears itself
+ *   automatically on transaction end  safe with pooling.
+ *
+ * @see utils/audit/auditContext.ts  for the AsyncLocalStorage setup
+ * @see db/migrations/20260303082814_create_audit_trigger.ts  for the trigger
+ */
 import { Knex } from "knex";
 import { AuditContext } from "./auditContext.js";
 import { logger } from "../logger.js";
@@ -31,6 +60,24 @@ import { logger } from "../logger.js";
 //     // trigger fired on both writes, audit_logs populated automatically
 //   });
 
+/**
+ * Wraps an async callback in a Knex transaction pre-configured with
+ * per-transaction audit session variables.
+ *
+ * @param db - The Knex instance from `DatabaseProvider.getClient`.
+ * @param fn - The async callback that receives the transaction client.
+ *             Any INSERT / UPDATE / DELETE inside `fn` will cause
+ *             the audit trigger to fire and write to `audit_logs`.
+ * @returns The value returned by `fn`.
+ * @throws Re-throws any error from `fn` after rolling back the transaction.
+ *
+ * @example
+ * const order = await withAuditContext(db, async (trx) => {
+ *   const [order] = await trx('orders').insert(data).returning('*');
+ *   await trx('wallet').where({ user_id }).update({ balance });
+ *   return order; // trigger fired on both writes, audit_logs populated
+ * });
+ */
 export async function withAuditContext<T>(
     db: Knex,
     fn: (trx: Knex.Transaction) => Promise<T>,
@@ -92,14 +139,22 @@ export async function withAuditContext<T>(
     });
 }
 
-//  withSystemContext 
-// Convenience wrapper for system operations (cron jobs, seeds, scripts).
-// Explicitly marks the source as 'system' in audit logs.
-//
-// Usage:
-//   await withSystemContext(db, async (trx) => {
-//     await trx('products').update({ stock: 0 }).where({ expired: true });
-//   });
+/**
+ * Convenience wrapper for system-originated operations (cron jobs, seeds, scripts).
+ *
+ * @remarks
+ * Explicitly marks `source = 'system'` and `performed_by = NULL` in audit logs.
+ * Equivalent to: `AuditContext.runAsSystem(() => withAuditContext(db, fn))`.
+ *
+ * @param db - The Knex instance from `DatabaseProvider.getClient`.
+ * @param fn - The async callback that receives the transaction client.
+ * @returns The value returned by `fn`.
+ *
+ * @example
+ * await withSystemContext(db, async (trx) => {
+ *   await trx('products').update({ stock: 0 }).where({ expired: true });
+ * });
+ */
 export async function withSystemContext<T>(
     db: Knex,
     fn: (trx: Knex.Transaction) => Promise<T>,

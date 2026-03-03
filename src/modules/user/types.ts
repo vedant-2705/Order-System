@@ -1,5 +1,10 @@
+/**
+ * @module user/types
+ * @description Domain types for the user module.
+ */
 import { UserRole } from "./enum.js";
 
+/** Database row shape for the `users` table. */
 export interface User {
     id: number;
     name: string;

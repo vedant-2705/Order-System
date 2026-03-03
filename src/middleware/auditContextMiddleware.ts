@@ -1,22 +1,49 @@
+/**
+ * @module auditContextMiddleware
+ * @description Express middleware that seeds an `AuditContextData` store
+ * into Node.js `AsyncLocalStorage` for the lifetime of each HTTP request.
+ *
+ * Must be registered **after** any authentication middleware (which sets
+ * `req.user`) and **before** any route handlers.
+ * 
+ * What it does:
+ *  1. Extracts userId from authenticated session (set by auth middleware)
+ *  2. Extracts IP address from request (handles proxies correctly)
+ *  3. Extracts User-Agent header
+ *  4. Wraps the entire request in AuditContext.run()
+ *     -> everything downstream in this request's async chain
+ *     can call AuditContext.get() and get these values
+ *
+ * Correct registration order:
+ * ```
+ * app.use(authMiddleware)          // 1. sets req.user
+ * app.use(auditContextMiddleware)  // 2. reads req.user.id
+ * app.use(router)                  // 3. handlers call AuditContext.get()
+ * ```
+ *
+ * @see utils/audit/auditContext.ts
+ */
 import { Request, Response, NextFunction } from "express";
 import { AuditContext } from "../utils/audit/auditContext.js";
 
-//  Audit Context Middleware 
-// Runs on every HTTP request - MUST be registered before any routes.
-//
-// What it does:
-//   1. Extracts userId from authenticated session (set by auth middleware)
-//   2. Extracts IP address from request (handles proxies correctly)
-//   3. Extracts User-Agent header
-//   4. Wraps the entire request in AuditContext.run()
-//      -> everything downstream in this request's async chain
-//        can call AuditContext.get() and get these values
-//
-// Registration order in Express matters:
-//   app.use(authMiddleware)       <- sets req.user first
-//   app.use(auditContextMiddleware) <- reads req.user.id
-//   app.use(router)               <- handlers can use AuditContext.get()
-
+/**
+ * Extracts audit metadata from the request and wraps the entire
+ * Express handler chain in an `AsyncLocalStorage` context.
+ *
+ * @remarks
+ * `next()` is called **inside** `AuditContext.run()` so that the async
+ * context remains alive for the full request lifecycle  including any
+ * database writes triggered by route handlers.
+ *
+ * The promise resolves when the response emits `finish` or `close`,
+ * ensuring the context is not garbage-collected before the last query
+ * completes.
+ *
+ * IP resolution priority (most-to-least specific):
+ *   1. `x-forwarded-for` first value (set by Nginx / AWS ALB)
+ *   2. `x-real-ip` (set by some reverse proxies)
+ *   3. `req.ip`   (Express built-in, respects `trust proxy`)
+ */
 export function auditContextMiddleware(
     req: Request,
     res: Response,

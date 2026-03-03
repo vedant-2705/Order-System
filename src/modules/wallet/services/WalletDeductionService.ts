@@ -1,3 +1,17 @@
+/**
+ * @module WalletDeductionService
+ * @description Handles the balance deduction and ledger write for an order payment.
+ *
+ * Owns the balance validation and all wallet-related writes in the order
+ * creation flow.  Always called inside an existing transaction from
+ * `CreateOrderUseCase`  never opens its own transaction.
+ *
+ * Precondition:
+ *   The wallet row must already be locked `FOR UPDATE` by the caller
+ *   (`CreateOrderUseCase` does this in the LOCK phase).
+ *
+ * @see modules/orders/use-cases/CreateOrderUseCase.ts  for the lock phase
+ */
 import "reflect-metadata";
 import { injectable, inject } from "tsyringe";
 import { Knex } from "knex";
@@ -10,6 +24,7 @@ import { Wallet } from "../types.js";
 import { WalletTransaction } from "modules/wallet-transaction/types.js";
 import { type IWalletTransactionRepository, WALLET_TRANSACTION_REPOSITORY_TOKEN } from "modules/wallet-transaction/IWalletTransactionRepository.js";
 
+/** Output returned by a successful `WalletDeductionService.deduct()` call. */
 export interface DeductionResult {
     updatedWallet: Wallet;
     walletTransaction: WalletTransaction;
