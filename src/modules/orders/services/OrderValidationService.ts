@@ -1,0 +1,106 @@
+import "reflect-metadata";
+import { injectable, inject } from "tsyringe";
+import { Logger } from "utils/logger.js";
+import { NotFoundError } from "shared/errors/NotFoundError.js";
+import { AppError } from "shared/errors/AppError.js";
+import { Product } from "modules/product/types.js";
+import { CreateOrderRequestItem } from "modules/order-items/types.js";
+
+export interface ComputedLineItem {
+    productId: number;
+    quantity: number;
+    priceAtPurchase: number;
+    subtotal: number;
+}
+
+export interface ValidationResult {
+    lineItems: ComputedLineItem[];
+    total: number;
+}
+
+/**
+ * Responsible for:
+ *   1. Verifying every requested product exists in the locked product set
+ *   2. Validating stock is sufficient for every item
+ *   3. Computing line items and order total from DB prices (never client prices)
+ *
+ * Called from CreateOrderUseCase AFTER locks are acquired 
+ * the product rows passed in are already locked FOR UPDATE.
+ */
+@injectable()
+export class OrderValidationService {
+    constructor(
+        @inject(Logger)
+        private readonly logger: Logger,
+    ) {}
+
+    validate(
+        items: CreateOrderRequestItem[],
+        products: Product[],
+    ): ValidationResult {
+        const productMap = new Map(products.map((p) => [p.id, p]));
+
+        // ── 1. Verify all requested products exist ───────────────────────────
+        for (const item of items) {
+            if (!productMap.has(item.product_id)) {
+                throw new NotFoundError("PRODUCT_NOT_FOUND", {
+                    id: String(item.product_id),
+                });
+            }
+        }
+
+        // ── 2. Validate stock  collect ALL failures before throwing ─────────
+        // Better UX: surface all out-of-stock items at once, not one by one.
+        const stockErrors: Array<{
+            productId: number;
+            requested: number;
+            available: number;
+        }> = [];
+
+        for (const item of items) {
+            const product = productMap.get(item.product_id)!;
+            if (product.stock < item.quantity) {
+                stockErrors.push({
+                    productId: item.product_id,
+                    requested: item.quantity,
+                    available: product.stock,
+                });
+            }
+        }
+
+        if (stockErrors.length > 0) {
+            this.logger.warn("[OrderValidation] Insufficient stock", {
+                errors: stockErrors,
+            });
+
+            // Throw the first error  details for all failures are logged above.
+            const first = stockErrors[0];
+            throw new AppError("INSUFFICIENT_STOCK", {
+                productId: String(first.productId),
+                requested: String(first.requested),
+                available: String(first.available),
+            });
+        }
+
+        // ── 3. Compute line items from DB prices (never trust client prices) ──
+        let total = 0;
+        const lineItems: ComputedLineItem[] = items.map((item) => {
+            const product = productMap.get(item.product_id)!;
+            const price = parseFloat(product.price); // DECIMAL → string from pg
+            const subtotal = price * item.quantity;
+            total += subtotal;
+
+            return {
+                productId: item.product_id,
+                quantity: item.quantity,
+                priceAtPurchase: price,
+                subtotal,
+            };
+        });
+
+        // Round to 2dp  prevents floating point drift (0.1 + 0.2 = 0.30000000000000004)
+        total = Math.round(total * 100) / 100;
+
+        return { lineItems, total };
+    }
+}

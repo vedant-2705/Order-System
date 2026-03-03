@@ -4,7 +4,7 @@ import { ERROR_CODES } from "constants/ErrorCodes.js";
 import { errorResponse } from "../ResponseHelper.js";
 
 /**
- * Title and statusCode come from ERROR_CODES — no magic strings.
+ * Title and statusCode come from ERROR_CODES  no magic strings.
  * Zod issues are flattened to { field: message } for the client.
  */
 export function handleZodError(

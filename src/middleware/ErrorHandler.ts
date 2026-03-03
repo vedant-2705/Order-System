@@ -33,7 +33,7 @@ export function errorHandler(
 
     // 2. Known application error (NotFoundError, InsufficientBalanceError etc.)
     if (err instanceof AppError) {
-        // Only log server errors — 4xx are expected, not bugs
+        // Only log server errors  4xx are expected, not bugs
         if (err.statusCode >= 500) {
             logger.error("[AppError]", {
                 code: err.code,

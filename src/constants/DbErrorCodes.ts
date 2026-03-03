@@ -56,7 +56,7 @@ export const DbErrorCodes = {
 
 /**
  * Maps each PostgreSQL error code to an ErrorCode key from ERROR_CODES.
- * DbErrorHelper reads this map — no switch, no hardcoded strings.
+ * DbErrorHelper reads this map  no switch, no hardcoded strings.
  */
 export const DB_ERROR_MAP: Record<string, ErrorCode> = {
     [DbErrorCodes.UNIQUE_VIOLATION]: "CONFLICT",

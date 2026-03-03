@@ -2,7 +2,7 @@ import { ErrorCode } from "constants/ErrorCodes.js";
 import { AppError } from "./AppError.js";
 
 /**
- * HTTP 404 — resource not found.
+ * HTTP 404  resource not found.
  * @example throw new NotFoundError('ORDER_NOT_FOUND', { id: String(orderId) })
  */
 export class NotFoundError extends AppError {

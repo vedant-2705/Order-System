@@ -4,7 +4,7 @@ import { errorResponse } from "../ResponseHelper.js";
 
 /**
  * AppError already carries title and statusCode from ERROR_CODES
- * (set in the AppError constructor). No lookup needed here —
+ * (set in the AppError constructor). No lookup needed here 
  * just read them off the error instance.
  */
 export function handleAppError(
