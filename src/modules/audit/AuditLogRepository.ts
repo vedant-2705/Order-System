@@ -110,10 +110,4 @@ export class AuditLogRepository
     async findRecent(limit: number = 50): Promise<AuditLog[]> {
         return this.db(this.table).orderBy("created_at", "desc").limit(limit);
     }
-
-    //  No create / update / delete methods 
-    // audit_logs is written exclusively by the PostgreSQL trigger.
-    // Application code is intentionally locked out of writing to this table.
-    // If you need to add a method here, ask: should this really bypass
-    // the trigger? Almost certainly the answer is no.
 }

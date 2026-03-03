@@ -11,8 +11,8 @@
  *
  * Startup sequence:
  *   1. registerDependencies()  -> all singletons registered
- *   2. db.ping()              -> verify DB is reachable
- *   3. app.listen()           -> begin accepting traffic
+ *   2. db.ping()               -> verify DB is reachable
+ *   3. app.listen()            -> begin accepting traffic
  */
 import "reflect-metadata"; // MUST be first import - tsyringe requires this
 import "dotenv/config";
