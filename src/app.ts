@@ -35,11 +35,6 @@ app.get("/health", async (_req, res) => {
     }
 });
 
-//  Routes (wired as we build each feature) 
-// app.use('/api/orders',   orderRoutes);
-// app.use('/api/wallet',   walletRoutes);
-// app.use('/api/products', productRoutes);
-
 //  Graceful Shutdown 
 async function shutdown(): Promise<void> {
     logger.info("Shutting down...");

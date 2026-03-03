@@ -21,26 +21,22 @@ export class ProductRepository
     }
 
     async findBySku(sku: string): Promise<Product | null> {
-        const row = await this.db(this.table)
+        const row = await this.query()
             .where({ sku })
-            .whereNull("deleted_at")
             .first();
         return row ?? null;
     }
 
     async findAllActive(): Promise<Product[]> {
-        return this.db(this.table)
-            .whereNull("deleted_at")
-            .where("stock", ">", 0);
+        return this.query().where("stock", ">", 0);
     }
 
     async findByIdsForUpdate(
         ids: number[],
         trx: Knex.Transaction,
     ): Promise<Product[]> {
-        return trx(this.table)
+        return this.query(trx)
             .whereIn("id", ids)
-            .whereNull("deleted_at")
             .orderBy("id", "asc") // consistent lock order -> prevents deadlocks
             .forUpdate();
     }

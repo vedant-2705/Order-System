@@ -22,17 +22,27 @@ export abstract class BaseRepository<T> {
         this.db = dbProvider.getClient;
     }
 
-    protected activeScope(qb: Knex.QueryBuilder): Knex.QueryBuilder {
-        return qb.whereNull(`${this.table}.deleted_at`);
+    //  Soft-delete-aware query builder 
+    // The single entry point for ALL read queries in subclasses.
+    // Automatically applies whereNull('deleted_at') so no developer can forget it.
+    //
+    // Usage in subclasses:
+    //   this.query()       -> non-transactional read, soft-delete filtered
+    //   this.query(trx)    -> transactional read (e.g. FOR UPDATE), same filter
+    //
+    // For writes (INSERT / UPDATE) do NOT use query() - you intentionally
+    // want to target a row regardless of deleted_at status (e.g. hard-delete).
+    protected query(trx?: Knex.Transaction): Knex.QueryBuilder {
+        return (trx ?? this.db)(this.table).whereNull(`${this.table}.deleted_at`);
     }
 
     async findById(id: number): Promise<T | null> {
-        const row = await this.db(this.table).where({ id }).first();
+        const row = await this.query().where({ id }).first();
         return row ?? null;
     }
 
     async findAll(): Promise<T[]> {
-        return this.db(this.table).select("*");
+        return this.query().select("*");
     }
 
     async update(id: number, data: Partial<T>): Promise<T | null> {

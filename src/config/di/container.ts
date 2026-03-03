@@ -8,6 +8,7 @@ import { registerProductModule } from "modules/product/container.js";
 import { registerWalletTransactionModule } from "modules/wallet-transaction/container.js";
 import { registerAuditLogModule } from "modules/audit/container.js";
 import { registerWalletModule } from "modules/wallet/container.js";
+import { registerOrderItemsModule } from "modules/order-items/container.js";
 
 //  Root Container 
 // Single entry point for all DI registration.
@@ -35,6 +36,7 @@ export function registerDependencies(): void {
 
     registerUserModule();
     registerOrderModule();
+    registerOrderItemsModule();
     registerProductModule();
     registerWalletModule();
     registerWalletTransactionModule();

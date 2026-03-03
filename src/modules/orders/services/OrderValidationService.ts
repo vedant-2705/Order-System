@@ -40,7 +40,7 @@ export class OrderValidationService {
     ): ValidationResult {
         const productMap = new Map(products.map((p) => [p.id, p]));
 
-        // ── 1. Verify all requested products exist ───────────────────────────
+        // Verify all requested products exist 
         for (const item of items) {
             if (!productMap.has(item.product_id)) {
                 throw new NotFoundError("PRODUCT_NOT_FOUND", {
@@ -49,7 +49,7 @@ export class OrderValidationService {
             }
         }
 
-        // ── 2. Validate stock  collect ALL failures before throwing ─────────
+        // Validate stock  collect ALL failures before throwing 
         // Better UX: surface all out-of-stock items at once, not one by one.
         const stockErrors: Array<{
             productId: number;
@@ -76,17 +76,17 @@ export class OrderValidationService {
             // Throw the first error  details for all failures are logged above.
             const first = stockErrors[0];
             throw new AppError("INSUFFICIENT_STOCK", {
-                productId: String(first.productId),
-                requested: String(first.requested),
-                available: String(first.available),
+                productId: String(first?.productId),
+                requested: String(first?.requested),
+                available: String(first?.available),
             });
         }
 
-        // ── 3. Compute line items from DB prices (never trust client prices) ──
+        // Compute line items from DB prices (never trust client prices) 
         let total = 0;
         const lineItems: ComputedLineItem[] = items.map((item) => {
             const product = productMap.get(item.product_id)!;
-            const price = parseFloat(product.price); // DECIMAL → string from pg
+            const price = parseFloat(product.price); // DECIMAL -> string from pg
             const subtotal = price * item.quantity;
             total += subtotal;
 
@@ -98,7 +98,6 @@ export class OrderValidationService {
             };
         });
 
-        // Round to 2dp  prevents floating point drift (0.1 + 0.2 = 0.30000000000000004)
         total = Math.round(total * 100) / 100;
 
         return { lineItems, total };

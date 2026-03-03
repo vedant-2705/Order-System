@@ -22,9 +22,8 @@ export class UserRepository
 
     // Hits idx_users_email  called on every login.
     async findByEmail(email: string): Promise<User | null> {
-        const row = await this.db(this.table)
+        const row = await this.query()
             .where({ email })
-            .whereNull("deleted_at")
             .first();
         return row ?? null;
     }

@@ -26,18 +26,16 @@ export class OrderRepository
     }
 
     async findByOrderNumber(orderNumber: string): Promise<Order | null> {
-        const row = await this.db(this.table)
+        const row = await this.query()
             .where({ order_number: orderNumber })
-            .whereNull("deleted_at")
             .first();
         return row ?? null;
     }
 
     // Hits idx_orders_user_created (user_id, created_at DESC).
     async findByUserId(userId: number): Promise<Order[]> {
-        return this.db(this.table)
+        return this.query()
             .where({ user_id: userId })
-            .whereNull("deleted_at")
             .orderBy("created_at", "desc");
     }
 
