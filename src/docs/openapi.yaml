@@ -1,0 +1,132 @@
+openapi: 3.0.3
+info:
+  title: Order System API
+  version: 1.0.0
+  description: Core transactional engine for processing E-commerce orders.
+paths:
+  /api/v1/orders:
+    post:
+      summary: Create a new order
+      operationId: createOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderPayload'
+      responses:
+        '201':
+          description: Order successfully created.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/OrderResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        # ... (other error responses remain the same)
+
+components:
+  schemas:
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        meta:
+          type: object
+          properties:
+            timestamp:
+              type: string
+              format: date-time
+              example: "2026-03-03T10:30:00Z"
+
+    CreateOrderPayload:
+      type: object
+      required:
+        - userId
+        - items
+      properties:
+        userId:
+          type: string
+          format: uuid
+          description: The ID of the user placing the order.
+        items:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required:
+              - productId
+              - quantity
+            properties:
+              productId:
+                type: string
+                format: uuid
+              quantity:
+                type: integer
+                minimum: 1
+                
+    OrderResponse:
+      type: object
+      properties:
+        orderId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          example: COMPLETED
+        totalAmount:
+          type: number
+          format: float
+        createdAt:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      description: RFC 7807 compliant error response with custom extensions.
+      properties:
+        type:
+          type: string
+          format: uri
+          example: "https://api.example.com/errors/insufficient_funds"
+        title:
+          type: string
+          example: "Insufficient Funds"
+        status:
+          type: integer
+          example: 402
+        detail:
+          type: string
+          example: "The wallet balance of 50.00 is not sufficient for the order total of 120.00."
+        instance:
+          type: string
+          format: uri
+          example: "/api/v1/orders"
+        code:
+          type: string
+          example: "INSUFFICIENT_FUNDS"
+        traceId:
+          type: string
+          format: uuid
+          example: "a1b2c3d4-e5f6-7890-1234-56789abcdef0"
+        errors:
+          type: array
+          description: Optional array of specific field validation errors.
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
