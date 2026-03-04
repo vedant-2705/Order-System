@@ -135,7 +135,7 @@ export class CreateOrderUseCase {
             );
 
             // Deduct stock for each product
-            await Promise.all(
+            const stockResults = await Promise.all(
                 items.map((item) =>
                     this.productRepo.deductStock(
                         item.product_id,
@@ -144,6 +144,21 @@ export class CreateOrderUseCase {
                     ),
                 ),
             );
+
+            const failedDeductions = stockResults
+                .map((ok, i) => (!ok ? items[i] : null))
+                .filter(Boolean);
+
+            if (failedDeductions.length > 0) {
+                // Throwing here triggers automatic rollback — order and wallet
+                // writes above will be rolled back too. Clean state restored.
+                this.logger.error("[CreateOrder] Stock deduction failed after validation", {
+                    failedItems: failedDeductions,
+                });
+                throw new Error(
+                    "Stock deduction failed for one or more products — this should not happen",
+                );
+            }
 
             this.logger.info("[CreateOrder] Completed", {
                 orderId: order.id,

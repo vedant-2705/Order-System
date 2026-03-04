@@ -21,8 +21,6 @@ export interface IUserRepository {
         input: UpdateUserInput,
         trx?: Knex.Transaction,
     ): Promise<User | null>;
-    softDelete(id: number, trx?: Knex.Transaction): Promise<boolean>;
+    softDelete(id: number): Promise<void>;
 
-    hardDelete(id: number, trx?: Knex.Transaction): Promise<boolean>;
 }
-    

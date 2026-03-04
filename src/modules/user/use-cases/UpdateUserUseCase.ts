@@ -1,9 +1,13 @@
+import "reflect-metadata";
 import { injectable, inject } from "tsyringe";
-import { type IUserRepository, USER_REPOSITORY_TOKEN } from "../IUserRepository.js";
+import * as bcrypt from "bcrypt";
+import {
+    type IUserRepository,
+    USER_REPOSITORY_TOKEN,
+} from "../IUserRepository.js";
 import { NotFoundError } from "shared/errors/NotFoundError.js";
 import { ConflictError } from "shared/errors/ConflictError.js";
 import { UpdateUserInput, User } from "../types.js";
-import * as bcrypt from "bcrypt";
 import { ErrorKeys } from "constants/ErrorCodes.js";
 
 const SALT_ROUNDS = 12;
@@ -26,11 +30,20 @@ export class UpdateUserUseCase {
 
     async execute(id: number, input: UpdateUserRequest): Promise<SafeUser> {
         const existing = await this.userRepo.findById(id);
-        if (!existing) throw new NotFoundError("USER_NOT_FOUND");
+        if (!existing) {
+            // FIX: was missing params arg — '{id}' placeholder never interpolated
+            throw new NotFoundError(ErrorKeys.USER_NOT_FOUND, {
+                id: String(id),
+            });
+        }
 
         if (input.email && input.email !== existing.email) {
             const conflict = await this.userRepo.findByEmail(input.email);
-            if (conflict) throw new ConflictError(ErrorKeys.USER_EMAIL_TAKEN, { email: input.email });
+            if (conflict) {
+                throw new ConflictError(ErrorKeys.USER_EMAIL_TAKEN, {
+                    email: input.email,
+                });
+            }
         }
 
         const updatePayload: UpdateUserInput = {};
@@ -45,9 +58,13 @@ export class UpdateUserUseCase {
         }
 
         const updated = await this.userRepo.update(id, updatePayload);
-        if (!updated) throw new NotFoundError("USER_NOT_FOUND");
+        if (!updated) {
+            throw new NotFoundError(ErrorKeys.USER_NOT_FOUND, {
+                id: String(id),
+            });
+        }
 
         const { password_hash: _, ...safeUser } = updated;
-        return safeUser;
+        return safeUser as SafeUser;
     }
 }

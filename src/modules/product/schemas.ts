@@ -9,6 +9,7 @@
  * Schema -> Controller -> UseCase flow:
  *   req.params  ->  validateParams(idParamSchema)  ->  ProductController  ->  ProductRepository
  */
+import { positiveAmount } from "schemas/common.js";
 import { z } from "zod";
 
 // ---------------------------------------------------------------------------
@@ -29,8 +30,53 @@ export const listProductsQuerySchema = z.object({
 });
 
 // ---------------------------------------------------------------------------
+// POST /api/v1/products
+// ---------------------------------------------------------------------------
+export const createProductSchema = z.object({
+    name: z.string().min(1, "Name is required").max(255),
+    description: z.string().max(2000).optional(),
+    price: positiveAmount.describe(
+        "Unit price — must be > 0, max 2 decimal places",
+    ),
+    sku: z
+        .string()
+        .min(1, "SKU is required")
+        .max(100)
+        .regex(
+            /^[A-Za-z0-9_-]+$/,
+            "SKU may only contain letters, numbers, hyphens, underscores",
+        ),
+    stock: z
+        .number()
+        .int()
+        .min(0, "Stock cannot be negative")
+        .optional()
+        .default(0),
+});
+
+// ---------------------------------------------------------------------------
+// PATCH /api/v1/products/:id
+// ---------------------------------------------------------------------------
+export const updateProductSchema = z
+    .object({
+        name: z.string().min(1).max(255).optional(),
+        description: z.string().max(2000).optional(),
+        price: positiveAmount.optional(),
+        sku: z
+            .string()
+            .min(1)
+            .max(100)
+            .regex(/^[A-Za-z0-9_-]+$/)
+            .optional(),
+        stock: z.number().int().min(0).optional(),
+    })
+    .refine((d) => Object.keys(d).length > 0, {
+        message: "At least one field must be provided",
+    });
+
+// ---------------------------------------------------------------------------
 // Inferred types
 // ---------------------------------------------------------------------------
-
-/** Validated query shape for GET /api/v1/products */
 export type ListProductsQuery = z.infer<typeof listProductsQuerySchema>;
+export type CreateProductBody = z.infer<typeof createProductSchema>;
+export type UpdateProductBody = z.infer<typeof updateProductSchema>;

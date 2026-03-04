@@ -12,6 +12,7 @@ import { ORDER_REPOSITORY_TOKEN } from "./IOrderRepository.js";
 import { GetOrderUseCase } from "./use-cases/GetOrderUseCase.js";
 import { CreateOrderUseCase } from "./use-cases/CreateOrderUseCase.js";
 import { OrderController } from "./OrderController.js";
+import { CancelOrderUseCase } from "./use-cases/CancelOrderUseCase.js";
 
 /** Registers `OrderRepository` as the singleton implementation of `IOrderRepository`. */
 export function registerOrderModule(): void {
@@ -19,6 +20,8 @@ export function registerOrderModule(): void {
 
     container.registerSingleton<GetOrderUseCase>(GetOrderUseCase);
     container.registerSingleton<CreateOrderUseCase>(CreateOrderUseCase);
+    
+    container.registerSingleton<CancelOrderUseCase>(CancelOrderUseCase);
 
     container.registerSingleton<OrderController>(OrderController);
 }

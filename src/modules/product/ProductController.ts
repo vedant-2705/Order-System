@@ -1,22 +1,13 @@
 /**
  * @module ProductController
- * @description HTTP layer for product read operations.
- *
- * Products are read-only at this stage - write operations (create, update,
- * soft-delete) will be added in a future session when admin routes are built.
- *
- * ProductController injects `IProductRepository` directly rather than going
- * through a dedicated use case class.  This is intentional: the only logic
- * here is fetch + 404 check, which does not justify a separate use-case class.
- * When product writes are added, a `ProductUseCase` will be introduced and
- * this controller will be updated to inject it.
- *
- * All methods are bound arrow functions for consistent `router.get(path, asyncHandler(...))`
- * usage without losing `this`.
+ * @description HTTP layer for product operations.
  *
  * Route map (registered in product.routes.ts):
- *   GET    /api/v1/products          -> getAll
- *   GET    /api/v1/products/:id      -> getById
+ *   GET    /api/v1/products          -> getAll     (public)
+ *   GET    /api/v1/products/:id      -> getById    (public)
+ *   POST   /api/v1/products          -> create     (admin only)
+ *   PATCH  /api/v1/products/:id      -> update     (admin only)
+ *   DELETE /api/v1/products/:id      -> delete     (admin only)
  */
 import "reflect-metadata";
 import { injectable, inject } from "tsyringe";
@@ -24,45 +15,64 @@ import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import { successResponse } from "helpers/ResponseHelper.js";
 import { GetProductUseCase } from "./use-cases/GetProductUseCase.js";
+import { CreateProductUseCase } from "./use-cases/CreateProductUseCase.js";
+import { UpdateProductUseCase } from "./use-cases/UpdateProductUseCase.js";
+import { DeleteProductUseCase } from "./use-cases/DeleteProductUseCase.js";
 import { IdParam } from "schemas/common.js";
-import { ListProductsQuery } from "./schemas.js";
+import {
+    ListProductsQuery,
+    CreateProductBody,
+    UpdateProductBody,
+} from "./schemas.js";
 
 @injectable()
 export class ProductController {
     constructor(
         @inject(GetProductUseCase)
         private readonly getProductUseCase: GetProductUseCase,
+
+        @inject(CreateProductUseCase)
+        private readonly createProductUseCase: CreateProductUseCase,
+
+        @inject(UpdateProductUseCase)
+        private readonly updateProductUseCase: UpdateProductUseCase,
+
+        @inject(DeleteProductUseCase)
+        private readonly deleteProductUseCase: DeleteProductUseCase,
     ) {}
 
-    /**
-     * GET /api/v1/products
-     *
-     * Returns all active (non-deleted, in-stock) products.
-     * Supports optional ?search= query param for name filtering.
-     * req.query is pre-validated by validateQuery(listProductsQuerySchema).
-     */
     getAll = async (req: Request, res: Response): Promise<void> => {
         const { search } = req.query as unknown as ListProductsQuery;
-
         const products = await this.getProductUseCase.getAll({ search });
-
         res.status(StatusCodes.OK).json(
             successResponse(products, { count: products.length }),
         );
     };
 
-    /**
-     * GET /api/v1/products/:id
-     *
-     * Returns a single active product by its internal PK.
-     * req.params.id is pre-validated and coerced by validateParams(idParamSchema).
-     * Responds 200 with the product, or 404 if not found or soft-deleted.
-     */
     getById = async (req: Request, res: Response): Promise<void> => {
         const { id } = req.params as unknown as IdParam;
-
         const product = await this.getProductUseCase.getById(id);
-
         res.status(StatusCodes.OK).json(successResponse(product));
+    };
+
+    create = async (req: Request, res: Response): Promise<void> => {
+        const body = req.body as CreateProductBody;
+        const product = await this.createProductUseCase.execute(body);
+        res.status(StatusCodes.CREATED).json(
+            successResponse(product, { timestamp: new Date().toISOString() }),
+        );
+    };
+
+    update = async (req: Request, res: Response): Promise<void> => {
+        const { id } = req.params as unknown as IdParam;
+        const body = req.body as UpdateProductBody;
+        const product = await this.updateProductUseCase.execute(id, body);
+        res.status(StatusCodes.OK).json(successResponse(product));
+    };
+
+    delete = async (req: Request, res: Response): Promise<void> => {
+        const { id } = req.params as unknown as IdParam;
+        await this.deleteProductUseCase.execute(id);
+        res.status(StatusCodes.NO_CONTENT).send();
     };
 }

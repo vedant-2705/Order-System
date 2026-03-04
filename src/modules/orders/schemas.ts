@@ -43,8 +43,6 @@ const orderItemSchema = z.object({
  *   - notes is optional and capped to prevent large payloads
  */
 export const createOrderSchema = z.object({
-    userId: positiveInt.describe("ID of the user placing the order"),
-
     items: z
         .array(orderItemSchema)
         .min(1, "Order must contain at least one item")

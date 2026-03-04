@@ -18,6 +18,9 @@ export interface IOrderItemRepository {
     /** Returns all line items for a given order. */
     findByOrderId(orderId: number): Promise<OrderItem[]>;
 
+    /** Returns all line items for a given product. */
+    findByProductId(productId: number): Promise<OrderItem[]>;
+
     /**
      * Inserts all items for an order in a single SQL statement.
      * Never loop-insert items one by one  one call, one round-trip.

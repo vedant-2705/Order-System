@@ -56,6 +56,21 @@ export class OrderItemRepository
     }
 
     /**
+     * Returns all order items that reference a specific product.
+     *
+     * @remarks
+     * Uses index `idx_order_items_order_product` (order_id, product_id).
+     * 
+     * @param productId - Primary key of the referenced product.
+     * @returns Array of order item rows that include the product; empty array if none.
+     * 
+     * @see modules/product/use-cases/DeleteProductUseCase.ts for how this is used to check if a product can be safely deleted.
+     */
+    async findByProductId(productId: number): Promise<OrderItem[]> {
+        return this.db(this.table).where({ product_id: productId });
+    }
+
+    /**
      * Inserts multiple order items in a single SQL statement.
      *
      * @remarks

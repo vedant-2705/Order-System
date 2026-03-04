@@ -21,26 +21,34 @@ import { registerDependencies, resolve } from "config/di/container.js";
 import { DatabaseProvider } from "db/DatabaseProvider.js";
 import { auditContextMiddleware } from "middleware/auditContextMiddleware.js";
 import { logger } from "utils/logger.js";
+import { errorHandler } from "middleware/ErrorHandler.js";
+import userRoutes from "modules/user/routes.js";
+import productRoutes from "modules/product/routes.js";
+import orderRoutes from "modules/orders/routes.js";
+import walletRoutes from "modules/wallet/routes.js";
+import { ENV, validateEnv } from "config/env.js";
 
-//  Bootstrap DI 
+validateEnv(); // verify all required env vars are set before starting the app
+
+//  Bootstrap DI
 // Must happen before any container.resolve() calls.
-// All @singleton() instances are created lazily on first resolution 
+// All @singleton() instances are created lazily on first resolution
 // but registration must happen before that.
 registerDependencies();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = ENV.PORT || 3000;
 
-//  Core Middleware 
+//  Core Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-//  Audit Context Middleware 
+//  Audit Context Middleware
 // Wraps every request in AsyncLocalStorage context.
 // Order: auth middleware -> auditContextMiddleware -> routes
 app.use(auditContextMiddleware);
 
-//  Health Check 
+//  Health Check
 app.get("/health", async (_req, res) => {
     try {
         const db = resolve(DatabaseProvider);
@@ -50,6 +58,13 @@ app.get("/health", async (_req, res) => {
         res.status(503).json({ status: "error" });
     }
 });
+
+app.use("/api/v1/users", userRoutes);
+app.use("/api/v1/products", productRoutes);
+app.use("/api/v1/orders", orderRoutes);
+app.use("/api/v1/wallet", walletRoutes);
+
+app.use(errorHandler);
 
 /**
  * Gracefully shuts down the server.
