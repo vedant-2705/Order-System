@@ -15,7 +15,7 @@
  * @see modules/product/IProductRepository.ts
  */
 import "reflect-metadata";
-import { inject, injectable } from "tsyringe";
+import { inject, singleton } from "tsyringe";
 import { Knex } from "knex";
 import { DATABASE_PROVIDER, DatabaseProvider } from "db/DatabaseProvider.js";
 import { BaseRepository } from "shared/BaseRepository.js";
@@ -26,11 +26,10 @@ import { Product } from "./types.js";
  * Concrete repository for the `products` table.
  *
  * @remarks
- * Decorated with `@injectable()` as this repo is currently registered via
- * `container.registerSingleton()` in `product/container.ts`.  Consider
- * changing to `@singleton()` for consistency with other repositories.
+ * Decorated with `@singleton()` so the DI container creates exactly one
+ * instance and all injections share the same Knex connection pool reference.
  */
-@injectable()
+@singleton()
 export class ProductRepository
     extends BaseRepository<Product>
     implements IProductRepository

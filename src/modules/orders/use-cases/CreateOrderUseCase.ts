@@ -28,7 +28,7 @@
 import "reflect-metadata";
 import { injectable, inject } from "tsyringe";
 import { DatabaseProvider } from "db/DatabaseProvider.js";
-import { Logger } from "utils/logger.js";
+import { LOGGER, Logger } from "utils/logger.js";
 import { withAuditContext } from "utils/audit/WithAuditContext.js";
 import { NotFoundError } from "shared/errors/NotFoundError.js";
 import {
@@ -43,6 +43,7 @@ import { OrderValidationService } from "../services/OrderValidationService.js";
 import { OrderPersistenceService } from "../services/OrderPersistenceService.js";
 import { WalletDeductionService } from "modules/wallet/services/WalletDeductionService.js";
 import { CreateOrderInput, CreateOrderResult } from "../types.js";
+import { ErrorKeys } from "constants/ErrorCodes.js";
 
 /**
  * Orchestrates the full order creation flow.
@@ -76,7 +77,7 @@ export class CreateOrderUseCase {
         @inject(WalletDeductionService)
         private readonly walletDeductionService: WalletDeductionService,
 
-        @inject(Logger)
+        @inject(LOGGER)
         private readonly logger: Logger,
     ) {}
 
@@ -96,7 +97,7 @@ export class CreateOrderUseCase {
                 trx,
             );
             if (!wallet) {
-                throw new NotFoundError("WALLET_NOT_FOUND", {
+                throw new NotFoundError(ErrorKeys.WALLET_NOT_FOUND, {
                     userId: String(userId),
                 });
             }

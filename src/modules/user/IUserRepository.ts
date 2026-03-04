@@ -6,19 +6,23 @@
  * Token is co-located with the interface  no separate token file needed.
  */
 import { Knex } from "knex";
-import { User } from "./types.js";
+import { CreateUserInput, UpdateUserInput, User } from "./types.js";
 
 /** DI injection token for {@link IUserRepository}. */
 export const USER_REPOSITORY_TOKEN = Symbol("IUserRepository");
 
 export interface IUserRepository {
     findById(id: number): Promise<User | null>;
+    findAll(): Promise<User[]>;
     findByEmail(email: string): Promise<User | null>;
-    create(data: Partial<User>, trx?: Knex.Transaction): Promise<User>;
+    create(input: CreateUserInput, trx?: Knex.Transaction): Promise<User>;
     update(
         id: number,
-        data: Partial<User>,
+        input: UpdateUserInput,
         trx?: Knex.Transaction,
     ): Promise<User | null>;
-    softDelete(id: number): Promise<void>;
+    softDelete(id: number, trx?: Knex.Transaction): Promise<boolean>;
+
+    hardDelete(id: number, trx?: Knex.Transaction): Promise<boolean>;
 }
+    

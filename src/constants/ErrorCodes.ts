@@ -23,10 +23,10 @@ import { StatusCodes, ReasonPhrases } from "http-status-codes";
 
 /** Shape of a single entry in the `ERROR_CODES` catalogue. */
 export interface ErrorDefinition {
-    code: string;        // machine-readable identifier sent in the API response
-    statusCode: number;  // HTTP status code for `res.status()`
-    title: string;       // short stable summary (RFC 7807 `title`)
-    message: string;     // human-readable detail; may contain `{placeholder}` tokens
+    code: string; // machine-readable identifier sent in the API response
+    statusCode: number; // HTTP status code for `res.status()`
+    title: string; // short stable summary (RFC 7807 `title`)
+    message: string; // human-readable detail; may contain `{placeholder}` tokens
 }
 
 export const ERROR_CODES = {
@@ -73,7 +73,10 @@ export const ERROR_CODES = {
         title: ReasonPhrases.FORBIDDEN,
         message: "You do not have permission to perform this action",
     },
+
+    // -------------------------------------------------------------------------
     // User domain
+    // -------------------------------------------------------------------------
     USER_NOT_FOUND: {
         code: "USER_NOT_FOUND",
         statusCode: StatusCodes.NOT_FOUND,
@@ -86,7 +89,23 @@ export const ERROR_CODES = {
         title: ReasonPhrases.CONFLICT,
         message: "An account with email '{email}' already exists",
     },
+    /**
+     * Thrown when a soft-delete is attempted on a user who still has
+     * one or more non-cancelled / non-refunded orders.
+     * The user record cannot be removed while financial records depend on it.
+     */
+    USER_HAS_ACTIVE_ORDERS: {
+        code: "USER_HAS_ACTIVE_ORDERS",
+        statusCode: StatusCodes.CONFLICT,
+        title: ReasonPhrases.CONFLICT,
+        message:
+            "User '{id}' cannot be deleted because they have active orders. " +
+            "Cancel all orders before deleting the account.",
+    },
+
+    // -------------------------------------------------------------------------
     // Product domain
+    // -------------------------------------------------------------------------
     PRODUCT_NOT_FOUND: {
         code: "PRODUCT_NOT_FOUND",
         statusCode: StatusCodes.NOT_FOUND,
@@ -105,7 +124,10 @@ export const ERROR_CODES = {
         title: ReasonPhrases.UNPROCESSABLE_ENTITY,
         message: "Product '{name}' is out of stock",
     },
+
+    // -------------------------------------------------------------------------
     // Order domain
+    // -------------------------------------------------------------------------
     ORDER_NOT_FOUND: {
         code: "ORDER_NOT_FOUND",
         statusCode: StatusCodes.NOT_FOUND,
@@ -117,9 +139,13 @@ export const ERROR_CODES = {
         statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
         title: ReasonPhrases.UNPROCESSABLE_ENTITY,
         message:
-            "Order '{orderNumber}' cannot be cancelled in status '{status}'",
+            "Order '{orderNumber}' cannot be cancelled because its current " +
+            "status is '{status}'. Only pending or confirmed orders can be cancelled.",
     },
+
+    // -------------------------------------------------------------------------
     // Wallet domain
+    // -------------------------------------------------------------------------
     WALLET_NOT_FOUND: {
         code: "WALLET_NOT_FOUND",
         statusCode: StatusCodes.NOT_FOUND,
@@ -140,7 +166,10 @@ export const ERROR_CODES = {
         message:
             "Insufficient stock for product '{productId}'. Requested: {requested}, Available: {available}",
     },
-    // Auth
+
+    // -------------------------------------------------------------------------
+    // Auth domain
+    // -------------------------------------------------------------------------
     INVALID_CREDENTIALS: {
         code: "INVALID_CREDENTIALS",
         statusCode: StatusCodes.UNAUTHORIZED,

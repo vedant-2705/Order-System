@@ -9,6 +9,9 @@ import "reflect-metadata";
 import { container } from "tsyringe";
 import { WalletRepository } from "./WalletRepository.js";
 import { WALLET_REPOSITORY_TOKEN } from "./IWalletRepository.js";
+import { TopUpWalletUseCase } from "./use-cases/TopUpWalletUseCase.js";
+import { GetWalletUseCase } from "./use-cases/GetWalletUseCase.js";
+import { WalletController } from "./WalletController.js";
 
 /** Registers `WalletRepository` as the singleton implementation of `IWalletRepository`. */
 export function registerWalletModule(): void {
@@ -16,4 +19,9 @@ export function registerWalletModule(): void {
         WALLET_REPOSITORY_TOKEN,
         WalletRepository,
     );
+
+    container.registerSingleton<GetWalletUseCase>(GetWalletUseCase);
+    container.registerSingleton<TopUpWalletUseCase>(TopUpWalletUseCase);
+
+    container.registerSingleton<WalletController>(WalletController);
 }
