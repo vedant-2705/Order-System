@@ -2,7 +2,7 @@
  * @module GetUserUseCase
  * @description Read-only use case for fetching user(s).
  *
- * Always strips `password_hash` before returning — the hash must never
+ * Always strips `password_hash` before returning - the hash must never
  * leave the service layer, even to internal consumers.
  */
 import "reflect-metadata";
@@ -44,11 +44,11 @@ export class GetUserUseCase {
      * Returns a single active user by PK.
      * @throws {NotFoundError} USER_NOT_FOUND if not found or soft-deleted.
      */
-    async getById(id: number): Promise<SafeUser> {
+    async getById(id: string): Promise<SafeUser> {
         this.logger.debug("[GetUser] By ID", { id });
         const user = await this.userRepo.findById(id);
         if (!user) {
-            throw new NotFoundError(ErrorKeys.USER_NOT_FOUND, { id: String(id) });
+            throw new NotFoundError(ErrorKeys.USER_NOT_FOUND, { id });
         }
         return strip(user);
     }

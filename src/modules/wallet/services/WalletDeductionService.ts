@@ -52,7 +52,7 @@ export class WalletDeductionService {
     async deduct(
         wallet: Wallet,
         amount: number,
-        orderId: number | null,
+        orderId: string | null,
         trx: Knex.Transaction,
     ): Promise<DeductionResult> {
         const balanceBefore = parseFloat(wallet.balance);

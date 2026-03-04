@@ -16,7 +16,7 @@ import { Product } from "./types.js";
 export const PRODUCT_REPOSITORY_TOKEN = Symbol("IProductRepository");
 
 export interface IProductRepository {
-    findById(id: number): Promise<Product | null>;
+    findById(id: string): Promise<Product | null>;
     findBySku(sku: string): Promise<Product | null>;
     findAllActive(): Promise<Product[]>;
 
@@ -25,13 +25,13 @@ export interface IProductRepository {
      * `ORDER BY id ASC` enforces consistent lock ordering to prevent deadlocks.
      */
     findByIdsForUpdate(
-        ids: number[],
+        ids: string[],
         trx: Knex.Transaction,
     ): Promise<Product[]>;
 
     create(data: Partial<Product>, trx?: Knex.Transaction): Promise<Product>;
     update(
-        id: number,
+        id: string,
         data: Partial<Product>,
         trx?: Knex.Transaction,
     ): Promise<Product | null>;
@@ -41,10 +41,10 @@ export interface IProductRepository {
      * Returns `true` on success, `false` if insufficient stock.
      */
     deductStock(
-        id: number,
+        id: string,
         qty: number,
         trx: Knex.Transaction,
     ): Promise<boolean>;
 
-    softDelete(id: number): Promise<void>;
+    softDelete(id: string): Promise<void>;
 }

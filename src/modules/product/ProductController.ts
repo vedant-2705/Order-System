@@ -42,7 +42,7 @@ export class ProductController {
     ) {}
 
     getAll = async (req: Request, res: Response): Promise<void> => {
-        const { search } = req.query as unknown as ListProductsQuery;
+        const { search } = (req as any).parsedQuery as ListProductsQuery;
         const products = await this.getProductUseCase.getAll({ search });
         res.status(StatusCodes.OK).json(
             successResponse(products, { count: products.length }),

@@ -16,10 +16,10 @@ export const WALLET_TRANSACTION_REPOSITORY_TOKEN = Symbol(
 
 export interface IWalletTransactionRepository {
     /** Returns all ledger entries for a wallet ordered by newest first. */
-    findByWalletId(walletId: number): Promise<WalletTransaction[]>;
+    findByWalletId(walletId: string): Promise<WalletTransaction[]>;
 
     /** Finds the ledger entry created for a specific order. */
-    findByOrderId(orderId: number): Promise<WalletTransaction | null>;
+    findByOrderId(orderId: string): Promise<WalletTransaction | null>;
 
     /**
      * Inserts an immutable ledger entry.

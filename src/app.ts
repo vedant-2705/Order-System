@@ -26,6 +26,7 @@ import userRoutes from "modules/user/routes.js";
 import productRoutes from "modules/product/routes.js";
 import orderRoutes from "modules/orders/routes.js";
 import walletRoutes from "modules/wallet/routes.js";
+import reportRoutes from "modules/reports/routes.js";
 import { ENV, validateEnv } from "config/env.js";
 
 validateEnv(); // verify all required env vars are set before starting the app
@@ -63,6 +64,7 @@ app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/products", productRoutes);
 app.use("/api/v1/orders", orderRoutes);
 app.use("/api/v1/wallet", walletRoutes);
+app.use("/api/v1/reports", reportRoutes);
 
 app.use(errorHandler);
 

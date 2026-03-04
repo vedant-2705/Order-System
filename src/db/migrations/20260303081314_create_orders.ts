@@ -9,14 +9,13 @@ import type { Knex } from "knex";
 export async function up(knex: Knex): Promise<void> {
     await knex.schema.createTable("orders", (table) => {
         //  Primary Key 
-        table.increments("id").primary();
+        table.uuid("id").primary().defaultTo(knex.fn.uuid());
 
         //  Foreign Key 
         // onDelete RESTRICT: cannot delete a user who has orders.
         // Orders are financial records - must be preserved.
         table
-            .integer("user_id")
-            .unsigned()
+            .uuid("user_id")
             .notNullable()
             .references("id")
             .inTable("users")

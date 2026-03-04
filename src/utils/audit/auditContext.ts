@@ -33,7 +33,7 @@ export type AuditSource = "api" | "system";
  * All fields are nullable to support unauthenticated and system-originated calls.
  */
 export interface AuditContextData {
-    userId: number | null;     // who performed the action (null = system/cron)
+    userId: string | null;     // who performed the action (null = system/cron)
     ip: string | null;         // IPv4 or IPv6 address from the request
     userAgent: string | null;  // browser or API client identifier
     source: AuditSource;       // 'api' = HTTP request | 'system' = cron/migration

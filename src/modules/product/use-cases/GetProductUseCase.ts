@@ -88,7 +88,7 @@ export class GetProductUseCase {
      * @throws {NotFoundError} PRODUCT_NOT_FOUND if the product does not exist
      *         or has been soft-deleted.
      */
-    async getById(id: number): Promise<Product> {
+    async getById(id: string): Promise<Product> {
         this.logger.debug("[GetProduct] By ID", { id });
 
         const product = await this.productRepo.findById(id);

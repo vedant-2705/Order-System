@@ -7,7 +7,7 @@ export type UserType = "admin" | "customer";
 
 /** Database row shape for the `users` table. */
 export interface User {
-    id: number;
+    id: string;
     name: string;
     email: string;
     password_hash: string;

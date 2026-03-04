@@ -57,7 +57,7 @@ export class WalletRepository
      * @param userId - The user whose wallet to retrieve.
      * @returns The wallet, or `null` if no wallet has been created yet.
      */
-    async findByUserId(userId: number): Promise<Wallet | null> {
+    async findByUserId(userId: string): Promise<Wallet | null> {
         const row = await this.db(this.table)
             .where({ user_id: userId })
             .first();
@@ -77,7 +77,7 @@ export class WalletRepository
      * @returns The locked wallet row, or `null` if not found.
      */
     async findByUserIdForUpdate(
-        userId: number,
+        userId: string,
         trx: Knex.Transaction,
     ): Promise<Wallet | null> {
         const row = await trx(this.table)
@@ -94,7 +94,7 @@ export class WalletRepository
      * @param trx    - Optional transaction client.
      * @returns The newly created wallet row.
      */
-    async create(userId: number, trx?: Knex.Transaction): Promise<Wallet> {
+    async create(userId: string, trx?: Knex.Transaction): Promise<Wallet> {
         const qb = trx ? trx(this.table) : this.db(this.table);
         const [row] = await qb
             .insert({ user_id: userId, balance: 0.0, currency: "INR" })
@@ -116,7 +116,7 @@ export class WalletRepository
      * @returns The updated wallet row with the new balance.
      */
     async deductBalance(
-        userId: number,
+        userId: string,
         amount: number,
         trx: Knex.Transaction,
     ): Promise<Wallet> {
@@ -142,7 +142,7 @@ export class WalletRepository
      * @returns The updated wallet row with the new balance.
      */
     async creditBalance(
-        userId: number,
+        userId: string,
         amount: number,
         trx: Knex.Transaction,
     ): Promise<Wallet> {

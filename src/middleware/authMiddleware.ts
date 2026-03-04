@@ -18,7 +18,7 @@ import { ErrorKeys } from "constants/ErrorCodes.js";
 import { UserType } from "modules/user/types.js";
 
 interface JwtPayload {
-    sub: number;
+    sub: string;
     role: UserType;
 }
 

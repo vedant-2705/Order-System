@@ -94,7 +94,7 @@ export class TopUpWalletUseCase {
             );
             if (!wallet) {
                 throw new NotFoundError(ErrorKeys.WALLET_NOT_FOUND, {
-                    userId: String(userId),
+                    userId,
                 });
             }
 

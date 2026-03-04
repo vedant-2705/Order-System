@@ -17,30 +17,30 @@ export const WALLET_REPOSITORY_TOKEN = Symbol("IWalletRepository");
 
 export interface IWalletRepository {
     /** Finds a wallet without locking. Safe for read-only display only. */
-    findByUserId(userId: number): Promise<Wallet | null>;
+    findByUserId(userId: string): Promise<Wallet | null>;
 
     /**
      * Finds a wallet and acquires a `FOR UPDATE` row lock.
      * Must be called before any balance deduction within a transaction.
      */
     findByUserIdForUpdate(
-        userId: number,
+        userId: string,
         trx: Knex.Transaction,
     ): Promise<Wallet | null>;
 
     /** Creates a zero-balance wallet for a user. */
-    create(userId: number, trx?: Knex.Transaction): Promise<Wallet>;
+    create(userId: string, trx?: Knex.Transaction): Promise<Wallet>;
 
     /** Decrements balance using DB-side arithmetic (`balance - amount`). */
     deductBalance(
-        userId: number,
+        userId: string,
         amount: number,
         trx: Knex.Transaction,
     ): Promise<Wallet>;
 
     /** Increments balance using DB-side arithmetic (`balance + amount`). */
     creditBalance(
-        userId: number,
+        userId: string,
         amount: number,
         trx: Knex.Transaction,
     ): Promise<Wallet>;

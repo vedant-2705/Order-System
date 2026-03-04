@@ -51,7 +51,7 @@ export class WalletTransactionRepository
      *
      * @param walletId - Primary key of the wallet.
      */
-    async findByWalletId(walletId: number): Promise<WalletTransaction[]> {
+    async findByWalletId(walletId: string): Promise<WalletTransaction[]> {
         return this.db(this.table)
             .where({ wallet_id: walletId })
             .orderBy("created_at", "desc");
@@ -63,7 +63,7 @@ export class WalletTransactionRepository
      * @param orderId - Primary key of the order.
      * @returns The wallet transaction, or `null` if not yet created.
      */
-    async findByOrderId(orderId: number): Promise<WalletTransaction | null> {
+    async findByOrderId(orderId: string): Promise<WalletTransaction | null> {
         const row = await this.db(this.table)
             .where({ order_id: orderId })
             .first();

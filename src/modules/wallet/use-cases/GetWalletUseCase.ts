@@ -62,13 +62,13 @@ export class GetWalletUseCase {
      * @param userId - Primary key of the user.
      * @throws {NotFoundError} WALLET_NOT_FOUND if no wallet exists for the user.
      */
-    async getByUserId(userId: number): Promise<Wallet> {
+    async getByUserId(userId: string): Promise<Wallet> {
         this.logger.debug("[GetWallet] By user ID", { userId });
 
         const wallet = await this.walletRepo.findByUserId(userId);
         if (!wallet) {
             throw new NotFoundError(ErrorKeys.WALLET_NOT_FOUND, {
-                userId: String(userId),
+                userId,
             });
         }
 
@@ -85,13 +85,13 @@ export class GetWalletUseCase {
      * @param userId - Primary key of the user.
      * @throws {NotFoundError} WALLET_NOT_FOUND if no wallet exists for the user.
      */
-    async getWithHistory(userId: number): Promise<WalletWithHistory> {
+    async getWithHistory(userId: string): Promise<WalletWithHistory> {
         this.logger.debug("[GetWallet] With history for user", { userId });
 
         const wallet = await this.walletRepo.findByUserId(userId);
         if (!wallet) {
             throw new NotFoundError(ErrorKeys.WALLET_NOT_FOUND, {
-                userId: String(userId),
+                userId,
             });
         }
 

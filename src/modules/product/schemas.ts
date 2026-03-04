@@ -36,7 +36,7 @@ export const createProductSchema = z.object({
     name: z.string().min(1, "Name is required").max(255),
     description: z.string().max(2000).optional(),
     price: positiveAmount.describe(
-        "Unit price — must be > 0, max 2 decimal places",
+        "Unit price - must be > 0, max 2 decimal places",
     ),
     sku: z
         .string()

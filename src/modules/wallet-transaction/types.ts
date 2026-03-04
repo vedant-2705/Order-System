@@ -10,9 +10,9 @@ import { WalletTransactionType } from "modules/wallet/types.js";
 
 /** Database row shape for the `wallet_transactions` table. */
 export interface WalletTransaction {
-    id: number;
-    wallet_id: number;
-    order_id: number | null;
+    id: string;
+    wallet_id: string;
+    order_id: string | null;
     transaction_type: WalletTransactionType;
     amount: string;
     balance_before: string;
@@ -23,8 +23,8 @@ export interface WalletTransaction {
 
 /** Input shape accepted by `WalletTransactionRepository.create()`. */
 export interface CreateWalletTransactionInput {
-    walletId: number;
-    orderId?: number | null;
+    walletId: string;
+    orderId?: string | null;
     type: WalletTransactionType;
     amount: number;
     balanceBefore: number;

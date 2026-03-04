@@ -1,6 +1,6 @@
 import type { Knex } from "knex";
 
-//  Migration: Audit trigger 
+//  Migration: Audit trigger
 // One trigger FUNCTION shared across all tables.
 // Attached as AFTER INSERT/UPDATE/DELETE on each audited table.
 //
@@ -21,17 +21,17 @@ import type { Knex } from "knex";
 //   between concurrent requests.
 
 export async function up(knex: Knex): Promise<void> {
-    //  Trigger Function 
+    //  Trigger Function
     await knex.raw(`
     CREATE OR REPLACE FUNCTION audit_log_trigger()
     RETURNS TRIGGER AS $$
     DECLARE
-      v_user_id     INTEGER;
+      v_user_id     TEXT;
       v_ip          TEXT;
       v_user_agent  TEXT;
       v_source      TEXT;
       v_action      TEXT;
-      v_entity_id   INTEGER;
+      v_entity_id   TEXT;
       v_old_data    JSONB;
       v_new_data    JSONB;
     BEGIN
@@ -47,7 +47,7 @@ export async function up(knex: Knex): Promise<void> {
 
       -- Parse user_id as integer - empty string or non-numeric -> NULL
       BEGIN
-        v_user_id := NULLIF(current_setting('app.current_user_id', true), '')::INTEGER;
+        v_user_id := NULLIF(current_setting('app.current_user_id', true), '');
       EXCEPTION WHEN OTHERS THEN
         v_user_id := NULL;
       END;
@@ -59,8 +59,15 @@ export async function up(knex: Knex): Promise<void> {
         v_source := 'admin_db';
       END IF;
 
-      --  Map trigger operation to audit action 
-      v_action := TG_OP;  -- 'INSERT', 'UPDATE', 'DELETE'
+       -- Map PostgreSQL TG_OP to the audit_logs action enum values.
+        -- TG_OP returns 'INSERT' | 'UPDATE' | 'DELETE'.
+        -- audit_logs.action expects 'CREATE' | 'UPDATE' | 'DELETE' | ...
+        v_action := CASE TG_OP
+            WHEN 'INSERT' THEN 'CREATE'
+            WHEN 'UPDATE' THEN 'UPDATE'
+            WHEN 'DELETE' THEN 'DELETE'
+            ELSE TG_OP
+        END;
 
       --  Extract entity id and row snapshots 
       IF TG_OP = 'DELETE' THEN
@@ -113,7 +120,7 @@ export async function up(knex: Knex): Promise<void> {
     SECURITY DEFINER  -- runs with the privileges of the function owner, not caller
   `);
 
-    //  Attach trigger to all audited tables 
+    //  Attach trigger to all audited tables
     // We audit every table that holds business-critical data.
     // audit_logs itself is NOT audited - that would cause infinite recursion.
     // wallet_transactions is NOT audited - it IS the audit trail for wallet.

@@ -78,7 +78,7 @@ export abstract class BaseRepository<T> {
      * @param id - The primary key value to look up.
      * @returns The matching entity, or `null` if not found or soft-deleted.
      */
-    async findById(id: number): Promise<T | null> {
+    async findById(id: string): Promise<T | null> {
         const row = await this.query().where({ id }).first();
         return row ?? null;
     }
@@ -99,7 +99,7 @@ export abstract class BaseRepository<T> {
      * @param data - Partial entity with the fields to change.
      * @returns The updated entity, or `null` if the row does not exist.
      */
-    async update(id: number, data: Partial<T>): Promise<T | null> {
+    async update(id: string, data: Partial<T>): Promise<T | null> {
         const [row] = await this.db(this.table)
             .where({ id })
             .update({ ...data, updated_at: this.db.fn.now() })
@@ -116,7 +116,7 @@ export abstract class BaseRepository<T> {
      *
      * @param id - Primary key of the row to soft-delete.
      */
-    async softDelete(id: number): Promise<void> {
+    async softDelete(id: string): Promise<void> {
         await this.db(this.table)
             .where({ id })
             .update({ deleted_at: this.db.fn.now() });
@@ -132,7 +132,7 @@ export abstract class BaseRepository<T> {
      *
      * @param id - Primary key of the row to permanently delete.
      */
-    async hardDelete(id: number): Promise<void> {
+    async hardDelete(id: string): Promise<void> {
         await this.db(this.table).where({ id }).delete();
     }
 
@@ -157,7 +157,7 @@ export abstract class BaseRepository<T> {
      * @returns The updated entity, or `null` if the row does not exist.
      */
     async updateWithTrx(
-        id: number,
+        id: string,
         data: Partial<T>,
         trx: Knex.Transaction,
     ): Promise<T | null> {

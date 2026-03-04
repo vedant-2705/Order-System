@@ -27,7 +27,7 @@ export async function up(knex: Knex): Promise<void> {
     //  audit_logs 
     await knex.schema.createTable("audit_logs", (table) => {
         //  Primary Key 
-        table.increments("id").primary();
+        table.uuid("id").primary().defaultTo(knex.fn.uuid());
 
         //  Entity Reference 
         // Generic polymorphic reference - works for any table.
@@ -36,7 +36,7 @@ export async function up(knex: Knex): Promise<void> {
         // Why not a direct FK? Because audit_logs must survive even if the
         // referenced row is deleted. A FK would prevent that.
         table.string("entity_type", 100).notNullable();
-        table.integer("entity_id").unsigned().notNullable();
+        table.string("entity_id").notNullable();
 
         //  Action 
         table
@@ -62,7 +62,7 @@ export async function up(knex: Knex): Promise<void> {
         // Nullable FK - system events (cron jobs, automated processes)
         // have no associated user.
         // NOT a hard FK - user may be deleted but log must be preserved.
-        table.integer("performed_by").unsigned().nullable();
+        table.string("performed_by").nullable();
 
         //  Request Context 
         // Captured from HTTP request for security investigations.

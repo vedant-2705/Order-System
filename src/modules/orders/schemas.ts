@@ -27,7 +27,7 @@ import { positiveInt } from "schemas/common.js";
  * Price is always read from the DB (locked row) - never trusted from client.
  */
 const orderItemSchema = z.object({
-    product_id: positiveInt.describe("Internal product ID"),
+    product_id: z.uuid("Invalid product ID format").describe("ID of the product to order"),
     quantity: positiveInt
         .max(9999, "Quantity cannot exceed 9999 per line item")
         .describe("Number of units to order"),

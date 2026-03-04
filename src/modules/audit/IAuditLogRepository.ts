@@ -29,13 +29,13 @@ export interface IAuditLogRepository {
      *
      * @example repo.findByEntity('orders', 42) // all events on order 42
      */
-    findByEntity(entityType: string, entityId: number): Promise<AuditLog[]>;
+    findByEntity(entityType: string, entityId: string): Promise<AuditLog[]>;
 
     /**
      * Returns all events performed by a specific user.
      * Uses index `idx_audit_logs_performer` (performed_by, created_at DESC).
      */
-    findByPerformer(userId: number): Promise<AuditLog[]>;
+    findByPerformer(userId: string): Promise<AuditLog[]>;
 
     /**
      * Returns all events of a given action type.

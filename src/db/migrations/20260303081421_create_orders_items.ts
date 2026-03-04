@@ -9,15 +9,14 @@ import type { Knex } from "knex";
 export async function up(knex: Knex): Promise<void> {
     await knex.schema.createTable("order_items", (table) => {
         //  Primary Key 
-        table.increments("id").primary();
+        table.uuid("id").primary().defaultTo(knex.fn.uuid());
 
         //  Foreign Keys 
         // CASCADE delete: if an order is deleted, its items go with it.
         // This is safe because order_items have no independent existence -
         // they only exist as part of an order.
         table
-            .integer("order_id")
-            .unsigned()
+            .uuid("order_id")
             .notNullable()
             .references("id")
             .inTable("orders")
@@ -27,8 +26,7 @@ export async function up(knex: Knex): Promise<void> {
         // RESTRICT: cannot delete a product that appears in any order.
         // Use soft delete (deleted_at) on products instead.
         table
-            .integer("product_id")
-            .unsigned()
+            .uuid("product_id")
             .notNullable()
             .references("id")
             .inTable("products")

@@ -28,13 +28,11 @@ export class UpdateUserUseCase {
         private readonly userRepo: IUserRepository,
     ) {}
 
-    async execute(id: number, input: UpdateUserRequest): Promise<SafeUser> {
+    async execute(id: string, input: UpdateUserRequest): Promise<SafeUser> {
         const existing = await this.userRepo.findById(id);
         if (!existing) {
-            // FIX: was missing params arg — '{id}' placeholder never interpolated
-            throw new NotFoundError(ErrorKeys.USER_NOT_FOUND, {
-                id: String(id),
-            });
+            // FIX: was missing params arg - '{id}' placeholder never interpolated
+            throw new NotFoundError(ErrorKeys.USER_NOT_FOUND, { id });
         }
 
         if (input.email && input.email !== existing.email) {
@@ -59,9 +57,7 @@ export class UpdateUserUseCase {
 
         const updated = await this.userRepo.update(id, updatePayload);
         if (!updated) {
-            throw new NotFoundError(ErrorKeys.USER_NOT_FOUND, {
-                id: String(id),
-            });
+            throw new NotFoundError(ErrorKeys.USER_NOT_FOUND, { id });
         }
 
         const { password_hash: _, ...safeUser } = updated;

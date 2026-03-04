@@ -13,14 +13,14 @@ import { Order, OrderStatus } from "./types.js";
 export const ORDER_REPOSITORY_TOKEN = Symbol("IOrderRepository");
 
 export interface IOrderRepository {
-    findById(id: number): Promise<Order | null>;
+    findById(id: string): Promise<Order | null>;
     findByOrderNumber(orderNumber: string): Promise<Order | null>;
-    findByUserId(userId: number): Promise<Order[]>;
+    findByUserId(userId: string): Promise<Order[]>;
     create(data: Partial<Order>, trx: Knex.Transaction): Promise<Order>;
     updateStatus(
-        id: number,
+        id: string,
         status: OrderStatus,
         trx?: Knex.Transaction,
     ): Promise<Order | null>;
-    softDelete(id: number): Promise<void>;
+    softDelete(id: string): Promise<void>;
 }

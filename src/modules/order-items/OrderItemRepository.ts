@@ -17,11 +17,11 @@
  * @see modules/orders/use-cases/CreateOrderUseCase.ts
  */
 import "reflect-metadata";
-import { singleton } from "tsyringe";
+import { inject, singleton } from "tsyringe";
 import { CreateOrderItemInput, OrderItem } from "./types.js";
 import { BaseRepository } from "shared/BaseRepository.js";
 import { IOrderItemRepository } from "./IOrderItemRepository.js";
-import { DatabaseProvider } from "db/DatabaseProvider.js";
+import { DATABASE_PROVIDER, DatabaseProvider } from "db/DatabaseProvider.js";
 import { Knex } from "knex";
 
 /**
@@ -38,7 +38,10 @@ export class OrderItemRepository
 {
     protected readonly table = "order_items";
 
-    constructor(dbProvider: DatabaseProvider) {
+    constructor(
+        @inject(DATABASE_PROVIDER)
+        private readonly dbProvider: DatabaseProvider
+    ) {
         super(dbProvider);
     }
 
@@ -51,7 +54,7 @@ export class OrderItemRepository
      * @param orderId - Primary key of the parent order.
      * @returns Array of order item rows; empty array if none.
      */
-    async findByOrderId(orderId: number): Promise<OrderItem[]> {
+    async findByOrderId(orderId: string): Promise<OrderItem[]> {
         return this.db(this.table).where({ order_id: orderId });
     }
 
@@ -66,7 +69,7 @@ export class OrderItemRepository
      * 
      * @see modules/product/use-cases/DeleteProductUseCase.ts for how this is used to check if a product can be safely deleted.
      */
-    async findByProductId(productId: number): Promise<OrderItem[]> {
+    async findByProductId(productId: string): Promise<OrderItem[]> {
         return this.db(this.table).where({ product_id: productId });
     }
 

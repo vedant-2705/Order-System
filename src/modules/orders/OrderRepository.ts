@@ -61,7 +61,7 @@ export class OrderRepository
      *
      * @param userId - The user whose order history to fetch.
      */
-    async findByUserId(userId: number): Promise<Order[]> {
+    async findByUserId(userId: string): Promise<Order[]> {
         return this.query()
             .where({ user_id: userId })
             .orderBy("created_at", "desc");
@@ -93,7 +93,7 @@ export class OrderRepository
      * @returns The updated order, or `null` if not found.
      */
     async updateStatus(
-        id: number,
+        id: string,
         status: OrderStatus,
         trx?: Knex.Transaction,
     ): Promise<Order | null> {

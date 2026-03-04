@@ -6,7 +6,7 @@
  *   req.body  ->  validateBody(topUpSchema)  ->  WalletController  ->  TopUpWalletUseCase
  */
 import { z } from "zod";
-import { positiveInt, positiveAmount } from "schemas/common.js";
+import { positiveAmount } from "schemas/common.js";
 
 // ---------------------------------------------------------------------------
 // POST /api/v1/wallet/topup
@@ -16,7 +16,7 @@ import { positiveInt, positiveAmount } from "schemas/common.js";
  * Schema for crediting a wallet.
  *
  * Constraints:
- *   - userId must be a positive integer
+ *   - userId must be a UUID
  *   - amount must be > 0 and have at most 2 decimal places
  *   - description is optional; capped to match DB column size
  *
@@ -24,7 +24,7 @@ import { positiveInt, positiveAmount } from "schemas/common.js";
  * to req.user.id and this field will be removed.
  */
 export const topUpSchema = z.object({
-    userId: positiveInt.describe("ID of the user whose wallet to credit"),
+    userId: z.uuid("Invalid UUID format").describe("ID of the user whose wallet to credit"),
 
     amount: positiveAmount.describe(
         "Amount to add to the wallet (must be > 0, max 2 decimal places)",

@@ -19,6 +19,7 @@ import { registerWalletTransactionModule } from "modules/wallet-transaction/cont
 import { registerAuditLogModule } from "modules/audit/container.js";
 import { registerWalletModule } from "modules/wallet/container.js";
 import { registerOrderItemsModule } from "modules/order-items/container.js";
+import { registerReportModule } from "modules/reports/container.js";
 
 
 /**
@@ -49,6 +50,7 @@ export function registerDependencies(): void {
     registerWalletModule();
     registerWalletTransactionModule();
     registerAuditLogModule();
+    registerReportModule();
 
     logger.info("[DI] All dependencies registered");
 }

@@ -16,10 +16,10 @@ export const ORDER_ITEM_REPOSITORY_TOKEN = Symbol("IOrderItemRepository");
 
 export interface IOrderItemRepository {
     /** Returns all line items for a given order. */
-    findByOrderId(orderId: number): Promise<OrderItem[]>;
+    findByOrderId(orderId: string): Promise<OrderItem[]>;
 
     /** Returns all line items for a given product. */
-    findByProductId(productId: number): Promise<OrderItem[]>;
+    findByProductId(productId: string): Promise<OrderItem[]>;
 
     /**
      * Inserts all items for an order in a single SQL statement.

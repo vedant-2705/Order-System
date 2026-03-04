@@ -9,17 +9,15 @@ import type { Knex } from "knex";
 export async function up(knex: Knex): Promise<void> {
     await knex.schema.createTable("wallet", (table) => {
         //  Primary Key 
-        table.increments("id").primary();
+        table.uuid("id").primary().defaultTo(knex.fn.uuid());
 
         //  Foreign Key 
         // UNIQUE: one wallet per user, enforced at DB level.
         // onDelete RESTRICT: cannot delete a user who has a wallet.
         // Prevents orphaned wallets and accidental user deletion.
         table
-            .integer("user_id")
-            .unsigned()
+            .uuid("user_id")
             .notNullable()
-            .unique()
             .references("id")
             .inTable("users")
             .onDelete("RESTRICT")

@@ -2,7 +2,7 @@
  * @module DeleteProductUseCase
  * @description Soft-deletes a product after verifying no active orders reference it.
  *
- * A product referenced by pending/confirmed/processing orders cannot be deleted —
+ * A product referenced by pending/confirmed/processing orders cannot be deleted -
  * those orders need the product row for fulfilment.
  *
  * Uses soft-delete so existing order_items (which FK-reference products with
@@ -45,14 +45,12 @@ export class DeleteProductUseCase {
         private readonly logger: Logger,
     ) {}
 
-    async execute(id: number): Promise<void> {
+    async execute(id: string): Promise<void> {
         this.logger.info("[DeleteProduct] Starting", { id });
 
         const product = await this.productRepo.findById(id);
         if (!product) {
-            throw new NotFoundError(ErrorKeys.PRODUCT_NOT_FOUND, {
-                id: String(id),
-            });
+            throw new NotFoundError(ErrorKeys.PRODUCT_NOT_FOUND, { id });
         }
 
         // Check if any active orders contain this product

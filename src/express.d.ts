@@ -17,7 +17,7 @@ declare global {
              * Undefined on unauthenticated routes (public endpoints).
              */
             user?: {
-                id: number;
+                id: string;
                 role: UserType;
             };
         }

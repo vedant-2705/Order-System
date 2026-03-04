@@ -12,15 +12,15 @@ import { CreateUserInput, UpdateUserInput, User } from "./types.js";
 export const USER_REPOSITORY_TOKEN = Symbol("IUserRepository");
 
 export interface IUserRepository {
-    findById(id: number): Promise<User | null>;
+    findById(id: string): Promise<User | null>;
     findAll(): Promise<User[]>;
     findByEmail(email: string): Promise<User | null>;
     create(input: CreateUserInput, trx?: Knex.Transaction): Promise<User>;
     update(
-        id: number,
+        id: string,
         input: UpdateUserInput,
         trx?: Knex.Transaction,
     ): Promise<User | null>;
-    softDelete(id: number): Promise<void>;
+    softDelete(id: string): Promise<void>;
 
 }

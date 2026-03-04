@@ -18,8 +18,8 @@ export type WalletTransactionType =
 
 /** Database row shape for the `wallet` table. */
 export interface Wallet {
-    id: number;
-    user_id: number;
+    id: string;
+    user_id: string;
     balance: string;
     currency: string;
     created_at: Date;
@@ -30,7 +30,7 @@ export interface Wallet {
 /** Input accepted by `TopUpWalletUseCase.execute()`. */
 export interface TopUpWalletInput {
     /** ID of the user whose wallet to credit. */
-    userId: number;
+    userId: string;
     /** Amount to add. Must be a positive value greater than zero. */
     amount: number;
     /** Optional human-readable description for the ledger entry. */

@@ -16,12 +16,11 @@ import type { Knex } from "knex";
 export async function up(knex: Knex): Promise<void> {
     await knex.schema.createTable("wallet_transactions", (table) => {
         //  Primary Key 
-        table.increments("id").primary();
+        table.uuid("id").primary().defaultTo(knex.fn.uuid());
 
         //  Foreign Keys 
         table
-            .integer("wallet_id")
-            .unsigned()
+            .uuid("wallet_id")
             .notNullable()
             .references("id")
             .inTable("wallet")
@@ -30,7 +29,7 @@ export async function up(knex: Knex): Promise<void> {
 
         // order_id is nullable: credits (top-ups) have no associated order.
         // Linked after orders table is created in migration 007.
-        table.integer("order_id").unsigned().nullable();
+        table.uuid("order_id").nullable();
 
         //  Transaction Details 
         // type: what kind of movement this is.

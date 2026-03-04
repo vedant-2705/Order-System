@@ -10,23 +10,23 @@
 
 /** Database row shape for the `order_items` table. */
 export interface OrderItem {
-    id: number;
-    order_id: number;
-    product_id: number;
+    id: string;
+    order_id: string;
+    product_id: string;
     quantity: number;
     price_at_purchase: string; // DECIMAL -> string from pg driver; price snapshot at time of purchase
 }
 
 /** Input shape for creating a single order item (used in `bulkCreate`). */
 export interface CreateOrderItemInput {
-    orderId: number;
-    productId: number;
+    orderId: string;
+    productId: string;
     quantity: number;
     priceAtPurchase: number; // camelCase input; mapped to snake_case before insert
 }
 
 /** Shape of a single item as submitted by the client in a create-order request. */
 export interface CreateOrderRequestItem {
-    product_id: number;
+    product_id: string;
     quantity: number;
 }

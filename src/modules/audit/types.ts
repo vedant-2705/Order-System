@@ -30,13 +30,13 @@ export type AuditSource = "api" | "admin_db" | "system";
 
 /** Database row shape for the `audit_logs` table. */
 export interface AuditLog {
-    id: number;
+    id: string;
     entity_type: string;                        // table name, e.g. 'orders'
-    entity_id: number;                          // primary key of the changed row
+    entity_id: string;                          // primary key of the changed row
     action: AuditAction;
     old_data: Record<string, unknown> | null;   // pre-change snapshot (UPDATE/DELETE)
     new_data: Record<string, unknown> | null;   // post-change snapshot (INSERT/UPDATE)
-    performed_by: number | null;                // null for unauthenticated / system ops
+    performed_by: string | null;                // null for unauthenticated / system ops
     ip_address: string | null;
     user_agent: string | null;
     source: AuditSource;

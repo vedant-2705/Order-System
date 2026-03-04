@@ -78,7 +78,7 @@ export class ProductRepository
      * @returns Array of locked product rows (only non-deleted ones).
      */
     async findByIdsForUpdate(
-        ids: number[],
+        ids: string[],
         trx: Knex.Transaction,
     ): Promise<Product[]> {
         return this.query(trx)
@@ -112,7 +112,7 @@ export class ProductRepository
      * @returns The updated product, or `null` if not found.
      */
     async update(
-        id: number,
+        id: string,
         data: Partial<Product>,
         trx?: Knex.Transaction,
     ): Promise<Product | null> {
@@ -141,7 +141,7 @@ export class ProductRepository
      * @returns `true` if the deduction succeeded; `false` if insufficient stock.
      */
     async deductStock(
-        id: number,
+        id: string,
         qty: number,
         trx: Knex.Transaction,
     ): Promise<boolean> {

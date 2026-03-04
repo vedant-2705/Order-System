@@ -21,7 +21,7 @@ import { CreateOrderRequestItem } from "modules/order-items/types.js";
 
 /** A single computed order line returned by `OrderValidationService.validate()`. */
 export interface ComputedLineItem {
-    productId: number;
+    productId: string;
     quantity: number;
     priceAtPurchase: number;
     subtotal: number;
@@ -67,7 +67,7 @@ export class OrderValidationService {
         // Validate stock  collect ALL failures before throwing 
         // Better UX: surface all out-of-stock items at once, not one by one.
         const stockErrors: Array<{
-            productId: number;
+            productId: string;
             requested: number;
             available: number;
         }> = [];
@@ -91,7 +91,7 @@ export class OrderValidationService {
             // Throw the first error  details for all failures are logged above.
             const first = stockErrors[0];
             throw new AppError("INSUFFICIENT_STOCK", {
-                productId: String(first?.productId),
+                productId: first?.productId as string,
                 requested: String(first?.requested),
                 available: String(first?.available),
             });

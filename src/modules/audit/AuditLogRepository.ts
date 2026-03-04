@@ -59,7 +59,7 @@ export class AuditLogRepository
      */
     async findByEntity(
         entityType: string,
-        entityId: number,
+        entityId: string,
     ): Promise<AuditLog[]> {
         return this.db(this.table)
             .where({ entity_type: entityType, entity_id: entityId })
@@ -76,7 +76,7 @@ export class AuditLogRepository
      * @param userId - Primary key of the user (`users.id`).
      * @returns Audit log rows ordered by `created_at DESC`.
      */
-    async findByPerformer(userId: number): Promise<AuditLog[]> {
+    async findByPerformer(userId: string): Promise<AuditLog[]> {
         return this.db(this.table)
             .where({ performed_by: userId })
             .orderBy("created_at", "desc");

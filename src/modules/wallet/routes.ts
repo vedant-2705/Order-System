@@ -2,7 +2,7 @@
  * @module wallet.routes
  * @description Express router for wallet endpoints.
  *
- *   POST   /api/v1/wallet/topup           -> topUp        (admin only — manual credit)
+ *   POST   /api/v1/wallet/topup           -> topUp        (admin only - manual credit)
  *   GET    /api/v1/wallet/:userId/history -> getHistory   (auth required)
  *   GET    /api/v1/wallet/:userId         -> getByUserId  (auth required)
  *

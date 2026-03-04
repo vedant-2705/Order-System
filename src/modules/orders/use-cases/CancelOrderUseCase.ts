@@ -8,7 +8,7 @@
  * Execution flow (single transaction):
  *   LOCK     wallet row + order row
  *   VALIDATE order is in a cancellable state
- *   WRITE    order status → cancelled
+ *   WRITE    order status -> cancelled
  *            wallet balance + refund amount (creditBalance)
  *            wallet_transactions INSERT (type: refund)
  *            product stock restored for each line item
@@ -77,8 +77,8 @@ export class CancelOrderUseCase {
     ) {}
 
     async execute(
-        orderId: number,
-        requestingUserId: number,
+        orderId: string,
+        requestingUserId: string,
     ): Promise<CancelOrderResult> {
         this.logger.info("[CancelOrder] Starting", {
             orderId,
@@ -115,7 +115,7 @@ export class CancelOrderUseCase {
             const refundAmount = parseFloat(order.total_amount);
             const balanceBefore = parseFloat(wallet.balance);
 
-            // WRITE 1: update order status → cancelled
+            // WRITE 1: update order status -> cancelled
             const cancelledOrder = await this.orderRepo.updateStatus(
                 orderId,
                 "cancelled",

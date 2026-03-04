@@ -3,8 +3,8 @@
  * @description Creates a new product with SKU uniqueness validation.
  *
  * Two-layer uniqueness check:
- *   1. Application check: findBySku → clean PRODUCT_SKU_TAKEN error
- *   2. DB safety net: UNIQUE constraint on sku → caught by ErrorHandler via DB_ERROR_MAP
+ *   1. Application check: findBySku -> clean PRODUCT_SKU_TAKEN error
+ *   2. DB safety net: UNIQUE constraint on sku -> caught by ErrorHandler via DB_ERROR_MAP
  */
 import "reflect-metadata";
 import { injectable, inject } from "tsyringe";

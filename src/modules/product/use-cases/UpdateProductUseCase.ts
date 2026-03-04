@@ -32,7 +32,7 @@ export class UpdateProductUseCase {
         private readonly logger: Logger,
     ) {}
 
-    async execute(id: number, input: UpdateProductInput): Promise<Product> {
+    async execute(id: string, input: UpdateProductInput): Promise<Product> {
         this.logger.info("[UpdateProduct] Starting", { id });
 
         const existing = await this.productRepo.findById(id);

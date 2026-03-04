@@ -2,7 +2,7 @@
  * @module DeleteUserUseCase
  * @description Soft-deletes a user after verifying they have no active orders.
  *
- * Guard: a user with pending/confirmed/processing orders cannot be deleted —
+ * Guard: a user with pending/confirmed/processing orders cannot be deleted -
  * those orders represent unresolved financial obligations.
  * Only cancelled/refunded/completed orders are acceptable.
  *
@@ -40,15 +40,13 @@ export class DeleteUserUseCase {
         private readonly logger: Logger,
     ) {}
 
-    async execute(id: number): Promise<void> {
+    async execute(id: string): Promise<void> {
         this.logger.info("[DeleteUser] Starting", { id });
 
         // 1. Verify user exists
         const user = await this.userRepo.findById(id);
         if (!user) {
-            throw new NotFoundError(ErrorKeys.USER_NOT_FOUND, {
-                id: String(id),
-            });
+            throw new NotFoundError(ErrorKeys.USER_NOT_FOUND, { id });
         }
 
         // 2. Check for active orders
@@ -58,12 +56,10 @@ export class DeleteUserUseCase {
         );
 
         if (hasActiveOrders) {
-            throw new ConflictError(ErrorKeys.USER_HAS_ACTIVE_ORDERS, {
-                id: String(id),
-            });
+            throw new ConflictError(ErrorKeys.USER_HAS_ACTIVE_ORDERS, { id });
         }
 
-        // 3. Soft delete — stamps deleted_at, preserves FK references
+        // 3. Soft delete - stamps deleted_at, preserves FK references
         await this.userRepo.softDelete(id);
 
         this.logger.info("[DeleteUser] Completed", { id });

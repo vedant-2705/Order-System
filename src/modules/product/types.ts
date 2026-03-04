@@ -9,7 +9,7 @@
 
 /** Database row shape for the `products` table. */
 export interface Product {
-    id: number;
+    id: string;
     name: string;
     description: string | null;
     price: string;           // DECIMAL -> string from pg driver; parseFloat() before use

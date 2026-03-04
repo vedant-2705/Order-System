@@ -5,7 +5,7 @@
  * Deliberately returns the same error for wrong email and wrong password
  * (INVALID_CREDENTIALS) to prevent user enumeration attacks.
  *
- * JWT payload carries only { sub: userId, role } — minimal claims.
+ * JWT payload carries only { sub: userId, role } - minimal claims.
  * Expiry is read from JWT_EXPIRES_IN env var (default: '7d').
  */
 import "reflect-metadata";
@@ -27,7 +27,7 @@ export interface LoginInput {
 
 export interface LoginResult {
     token: string;
-    userId: number;
+    userId: string;
     role: string;
 }
 
@@ -46,7 +46,7 @@ export class LoginUseCase {
 
         this.logger.info("[Login] Attempt", { email });
 
-        // Same error for "no such email" and "wrong password" — prevent enumeration
+        // Same error for "no such email" and "wrong password" - prevent enumeration
         const user = await this.userRepo.findByEmail(email);
         if (!user) {
             throw new UnauthorizedError(ErrorKeys.INVALID_CREDENTIALS);

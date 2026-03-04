@@ -57,7 +57,7 @@ export const positiveAmount = z
  * e.g. GET /orders/:id
  */
 export const idParamSchema = z.object({
-    id: coercedPositiveInt,
+    id: z.uuid("Invalid ID format"), // UUID v4 format validation
 });
 
 /**
@@ -65,7 +65,7 @@ export const idParamSchema = z.object({
  * e.g. GET /orders/user/:userId
  */
 export const userIdParamSchema = z.object({
-    userId: coercedPositiveInt,
+    userId: z.uuid("Invalid user ID format"),
 });
 
 /**

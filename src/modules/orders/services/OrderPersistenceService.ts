@@ -25,7 +25,7 @@ import { type IOrderItemRepository, ORDER_ITEM_REPOSITORY_TOKEN } from "modules/
 
 /** Input accepted by `OrderPersistenceService.persist()`. */
 export interface PersistOrderInput {
-    userId: number;
+    userId: string;
     total: number;
     lineItems: ComputedLineItem[];
     notes?: string | null;

@@ -90,7 +90,8 @@ export function validateQuery<T>(schema: ZodSchema<T>): RequestHandler {
             next(result.error);
             return;
         }
-        (req as any).query = result.data;
+        // Cast to any to assign to custom parsedQuery property
+        (req as any).parsedQuery = result.data;
         next();
     };
 }

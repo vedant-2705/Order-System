@@ -4,14 +4,14 @@
  *
  * Called ONCE before registerDependencies() and before app.listen().
  * If any required variable is missing or invalid, logs a clear error
- * and exits with code 1 immediately — never starts accepting traffic
+ * and exits with code 1 immediately - never starts accepting traffic
  * with a broken config.
  *
  * Why fail fast?
  *   A missing JWT_SECRET discovered at login time (not startup) means
  *   the app ran for an unknown period in a broken state.
  *   A missing DATABASE_HOST discovered on first request means the health check
- *   passed but real queries fail. Fail at startup — always.
+ *   passed but real queries fail. Fail at startup - always.
  *
  * Usage:
  *   import { validateEnv } from "config/validateEnv.js";
@@ -102,7 +102,7 @@ const ENV_SPEC: EnvVar[] = [
 
 /**
  * Validates all environment variables against ENV_SPEC.
- * Collects ALL errors before printing — never stops at the first one.
+ * Collects ALL errors before printing - never stops at the first one.
  * Calls process.exit(1) if any required var is missing or any validation fails.
  */
 export function validateEnv(): void {
@@ -131,7 +131,7 @@ export function validateEnv(): void {
 
     if (errors.length > 0) {
         console.error(
-            "\n❌ Environment validation failed — server will not start:\n",
+            "\n❌ Environment validation failed - server will not start:\n",
         );
         errors.forEach((e) => console.error(e));
         console.error(

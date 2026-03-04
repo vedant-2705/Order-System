@@ -2,7 +2,7 @@
  * @module UserRepository
  * @description Data-access layer for the `users` table.
  *
- * `findByEmail` is the primary lookup path — called on every login.
+ * `findByEmail` is the primary lookup path - called on every login.
  * Uses index `idx_users_email` so lookups are O(log n).
  *
  * All reads go through `this.query()` from `BaseRepository`, which
@@ -42,7 +42,7 @@ export class UserRepository
     }
 
     async update(
-        id: number,
+        id: string,
         data: UpdateUserInput,
         trx?: Knex.Transaction,
     ): Promise<User | null> {

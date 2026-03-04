@@ -64,7 +64,7 @@ export class GetOrderUseCase {
      * @param id - Internal PK of the order.
      * @throws {NotFoundError} ORDER_NOT_FOUND if the order does not exist or is soft-deleted.
      */
-    async getById(id: number): Promise<OrderWithItems> {
+    async getById(id: string): Promise<OrderWithItems> {
         this.logger.debug("[GetOrder] By ID", { id });
 
         const order = await this.orderRepo.findById(id);
@@ -107,7 +107,7 @@ export class GetOrderUseCase {
      *
      * @param userId - Primary key of the user.
      */
-    async getByUserId(userId: number): Promise<Order[]> {
+    async getByUserId(userId: string): Promise<Order[]> {
         this.logger.debug("[GetOrder] By user ID", { userId });
         return this.orderRepo.findByUserId(userId);
     }
