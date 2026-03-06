@@ -20,6 +20,11 @@ import { registerAuditLogModule } from "modules/audit/container.js";
 import { registerWalletModule } from "modules/wallet/container.js";
 import { registerOrderItemsModule } from "modules/order-items/container.js";
 import { registerReportModule } from "modules/reports/container.js";
+import { REDIS_CONNECTION, RedisConnection } from "cache/RedisConnection.js";
+import { CacheService } from "cache/CacheService.js";
+import { RateLimiter } from "lib/rate-limit/RateLimiter.js";
+import { IdempotencyService } from "lib/idempotency/IdempotencyService.js";
+import { OrderStatsService } from "realtime/OrderStatsService.js";
 
 
 /**
@@ -40,6 +45,12 @@ export function registerDependencies(): void {
     // it is always available before any repository tries to consume it.
     container.registerSingleton(LOGGER, Logger);
     container.registerSingleton(DATABASE_PROVIDER, DatabaseProvider);
+
+    container.registerSingleton(REDIS_CONNECTION, RedisConnection);
+    container.registerSingleton(CacheService);
+    container.registerSingleton(RateLimiter);
+    container.registerSingleton(IdempotencyService);
+    container.registerSingleton(OrderStatsService);
 
     logger.info("[DI] Infrastructure registered");
 

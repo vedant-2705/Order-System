@@ -16,6 +16,8 @@
  */
 import "reflect-metadata"; // MUST be first import - tsyringe requires this
 import "dotenv/config";
+import { createServer } from "http";
+import { WebSocketServer } from "ws";
 import express from "express";
 import { registerDependencies, resolve } from "config/di/container.js";
 import { DatabaseProvider } from "db/DatabaseProvider.js";
@@ -28,6 +30,12 @@ import orderRoutes from "modules/orders/routes.js";
 import walletRoutes from "modules/wallet/routes.js";
 import reportRoutes from "modules/reports/routes.js";
 import { ENV, validateEnv } from "config/env.js";
+import sseRoutes from "realtime/sseRoutes.js";
+
+import { sseManager } from "realtime/SSEManager.js";
+import { OrderStatsService } from "realtime/OrderStatsService.js";
+import { RedisConnection } from "cache/RedisConnection.js";
+import { wsManager } from "realtime/WebSocketManager.js";
 
 validateEnv(); // verify all required env vars are set before starting the app
 
@@ -65,8 +73,14 @@ app.use("/api/v1/products", productRoutes);
 app.use("/api/v1/orders", orderRoutes);
 app.use("/api/v1/wallet", walletRoutes);
 app.use("/api/v1/reports", reportRoutes);
+app.use("/api/v2/events", sseRoutes);
 
 app.use(errorHandler);
+
+// Create HTTP server and attach WebSocket server (shared port)
+const httpServer = createServer(app);
+const wss = new WebSocketServer({ server: httpServer, path: "/ws" });
+wsManager.attach(wss);
 
 /**
  * Gracefully shuts down the server.
@@ -78,8 +92,18 @@ app.use(errorHandler);
  */
 async function shutdown(): Promise<void> {
     logger.info("Shutting down...");
+    wsManager.shutdown();
+
+    sseManager.closeAll();
+
+    wss.close();
+
     const db = resolve(DatabaseProvider);
     await db.destroy(); // drain pool before exit
+
+    const redis = resolve(RedisConnection);
+    await redis.disconnect();
+
     process.exit(0);
 }
 
@@ -97,8 +121,25 @@ process.on("SIGINT", shutdown);
 async function start(): Promise<void> {
     const db = resolve(DatabaseProvider);
     await db.ping(); // verify DB reachable before accepting traffic
-    app.listen(PORT, () => {
+    // app.listen(PORT, () => {
+    //     logger.info(`Server running on port ${PORT}`);
+    // });
+
+    httpServer.listen(PORT, () => {
         logger.info(`Server running on port ${PORT}`);
+        logger.info(`WebSocket available at ws://localhost:${PORT}/ws`);
+
+        // SSE broadcast loop - pushes live order stats every 5s to connected admins
+        setInterval(async () => {
+            try {
+                if (sseManager.connectionCount === 0) return;
+                const statsService = resolve(OrderStatsService);
+                const stats = await statsService.getLiveStats();
+                sseManager.broadcast("order-stats", stats);
+            } catch (err) {
+                logger.error("[SSE] Broadcast error", { error: (err as Error).message });
+            }
+        }, 5_000);
     });
 }
 

@@ -21,17 +21,24 @@ import { authMiddleware } from "middleware/authMiddleware.js";
 import { requireRole } from "middleware/requireRole.js";
 import { registerSchema, loginSchema, updateUserSchema } from "./schemas.js";
 import { idParamSchema } from "schemas/common.js";
-    
+import { authRateLimit } from "middleware/RateLimitMiddleware.js";
+
 const router = Router();
 const ctrl = resolveController(UserController);
 
 // Public routes
 router.post(
     "/register",
+    authRateLimit,
     validateBody(registerSchema),
     asyncHandler((req, res) => ctrl().register(req, res)),
 );
-router.post("/login", validateBody(loginSchema), asyncHandler((req, res) => ctrl().login(req, res)));
+router.post(
+    "/login",
+    authRateLimit,
+    validateBody(loginSchema),
+    asyncHandler((req, res) => ctrl().login(req, res)),
+);
 
 // Protected routes
 router.get(

@@ -20,6 +20,9 @@
  *   - Consistent lock ordering (wallet -> products by ascending id) prevents
  *     deadlocks when two concurrent requests target overlapping products.
  *
+ * Cache invalidation happens AFTER withAuditContext resolves (after commit).
+ * Never invalidate inside the transaction - data is not committed yet.
+ *
  * @see modules/orders/services/OrderValidationService.ts
  * @see modules/orders/services/OrderPersistenceService.ts
  * @see modules/wallet/services/WalletDeductionService.ts
@@ -44,6 +47,8 @@ import { OrderPersistenceService } from "../services/OrderPersistenceService.js"
 import { WalletDeductionService } from "modules/wallet/services/WalletDeductionService.js";
 import { CreateOrderInput, CreateOrderResult } from "../types.js";
 import { ErrorKeys } from "constants/ErrorCodes.js";
+import { CacheService } from "cache/CacheService.js";
+import { CacheKeys } from "cache/CacheKeys.js";
 
 /**
  * Orchestrates the full order creation flow.
@@ -79,6 +84,9 @@ export class CreateOrderUseCase {
 
         @inject(LOGGER)
         private readonly logger: Logger,
+
+        @inject(CacheService)
+        private readonly cache: CacheService,
     ) {}
 
     async execute(input: CreateOrderInput): Promise<CreateOrderResult> {
@@ -87,88 +95,105 @@ export class CreateOrderUseCase {
 
         this.logger.info("[CreateOrder] Starting", { userId, productIds });
 
-        return withAuditContext(this.dbProvider.getClient, async (trx) => {
-            //  LOCK PHASE 
-            // Acquire all locks before reading anything.
-            // Lock order: wallet first, then products (consistent order = no deadlocks).
+        const result = await withAuditContext(
+            this.dbProvider.getClient,
+            async (trx) => {
+                //  LOCK PHASE
+                // Acquire all locks before reading anything.
+                // Lock order: wallet first, then products (consistent order = no deadlocks).
 
-            const wallet = await this.walletRepo.findByUserIdForUpdate(
-                userId,
-                trx,
-            );
-            if (!wallet) {
-                throw new NotFoundError(ErrorKeys.WALLET_NOT_FOUND, {
-                    userId: String(userId),
-                });
-            }
+                const wallet = await this.walletRepo.findByUserIdForUpdate(
+                    userId,
+                    trx,
+                );
+                if (!wallet) {
+                    throw new NotFoundError(ErrorKeys.WALLET_NOT_FOUND, {
+                        userId: String(userId),
+                    });
+                }
 
-            const products = await this.productRepo.findByIdsForUpdate(
-                productIds,
-                trx,
-            );
-
-            //  VALIDATE PHASE 
-            // Data is now locked  no other transaction can change it until we commit.
-            // Delegates to OrderValidationService: checks stock, computes total from DB prices.
-
-            const { lineItems, total } = this.validationService.validate(
-                items,
-                products,
-            );
-
-            //  WRITE PHASE 
-            // All checks passed. Write in dependency order.
-
-            // Create order record first so we have an order.id for the ledger entry
-            const { order, items: orderItems } =
-                await this.persistenceService.persist(
-                    { userId, total, lineItems, notes },
+                const products = await this.productRepo.findByIdsForUpdate(
+                    productIds,
                     trx,
                 );
 
-            // Deduct wallet + record ledger entry (validates balance internally)
-            await this.walletDeductionService.deduct(
-                wallet,
-                total,
-                order.id,
-                trx,
-            );
+                //  VALIDATE PHASE
+                // Data is now locked - no other transaction can change it until we commit.
+                // Delegates to OrderValidationService: checks stock, computes total from DB prices.
 
-            // Deduct stock for each product
-            const stockResults = await Promise.all(
-                items.map((item) =>
-                    this.productRepo.deductStock(
-                        item.product_id,
-                        item.quantity,
-                        trx,
-                    ),
-                ),
-            );
-
-            const failedDeductions = stockResults
-                .map((ok, i) => (!ok ? items[i] : null))
-                .filter(Boolean);
-
-            if (failedDeductions.length > 0) {
-                // Throwing here triggers automatic rollback - order and wallet
-                // writes above will be rolled back too. Clean state restored.
-                this.logger.error("[CreateOrder] Stock deduction failed after validation", {
-                    failedItems: failedDeductions,
-                });
-                throw new Error(
-                    "Stock deduction failed for one or more products - this should not happen",
+                const { lineItems, total } = this.validationService.validate(
+                    items,
+                    products,
                 );
-            }
 
-            this.logger.info("[CreateOrder] Completed", {
-                orderId: order.id,
-                orderNumber: order.order_number,
-                userId,
-                total,
-                items: orderItems.length,
-            });
+                //  WRITE PHASE
+                // All checks passed. Write in dependency order.
 
-            return { order, items: orderItems };
-        });
+                // Create order record first so we have an order.id for the ledger entry
+                const { order, items: orderItems } =
+                    await this.persistenceService.persist(
+                        { userId, total, lineItems, notes },
+                        trx,
+                    );
+
+                // Deduct wallet + record ledger entry (validates balance internally)
+                await this.walletDeductionService.deduct(
+                    wallet,
+                    total,
+                    order.id,
+                    trx,
+                );
+
+                // Deduct stock for each product
+                const stockResults = await Promise.all(
+                    items.map((item) =>
+                        this.productRepo.deductStock(
+                            item.product_id,
+                            item.quantity,
+                            trx,
+                        ),
+                    ),
+                );
+
+                const failedDeductions = stockResults
+                    .map((ok, i) => (!ok ? items[i] : null))
+                    .filter(Boolean);
+
+                if (failedDeductions.length > 0) {
+                    // Throwing here triggers automatic rollback - order and wallet
+                    // writes above will be rolled back too. Clean state restored.
+                    this.logger.error(
+                        "[CreateOrder] Stock deduction failed after validation",
+                        {
+                            failedItems: failedDeductions,
+                        },
+                    );
+                    throw new Error(
+                        "Stock deduction failed for one or more products - this should not happen",
+                    );
+                }
+
+                this.logger.info("[CreateOrder] Completed", {
+                    orderId: order.id,
+                    orderNumber: order.order_number,
+                    userId,
+                    total,
+                    items: orderItems.length,
+                });
+
+                return { order, items: orderItems };
+            },
+        );
+
+        // Transaction committed
+        // Invalidate cache AFTER commit - data is now persisted and safe to expose
+        await Promise.all([
+            this.cache.invalidatePattern(
+                CacheKeys.ordersByUserPattern(input.userId),
+            ),
+            this.cache.del(CacheKeys.orderStats()),
+        ]);
+
+        return result;
     }
 }

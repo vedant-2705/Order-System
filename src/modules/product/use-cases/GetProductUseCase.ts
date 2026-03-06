@@ -29,6 +29,8 @@ import {
 } from "../IProductRepository.js";
 import { Product } from "../types.js";
 import { ErrorKeys } from "constants/ErrorCodes.js";
+import { CacheService } from "cache/CacheService.js";
+import { CacheKeys, CacheTTL } from "cache/CacheKeys.js";
 
 /** Input accepted by `GetProductUseCase.getAll()`. */
 export interface GetAllProductsInput {
@@ -51,6 +53,9 @@ export class GetProductUseCase {
 
         @inject(Logger)
         private readonly logger: Logger,
+
+        @inject(CacheService)
+        private readonly cache: CacheService,
     ) {}
 
     /**
@@ -65,18 +70,31 @@ export class GetProductUseCase {
      * @param input - Optional search filter.
      */
     async getAll(input: GetAllProductsInput = {}): Promise<Product[]> {
-        this.logger.debug("[GetProduct] Get all active", {
+        const cacheKey = CacheKeys.productList({ search: input.search });
+
+        const cached = await this.cache.get<Product[]>(cacheKey);
+        if (cached) {
+            this.logger.debug("[GetProduct] Cache HIT", { cacheKey });
+            return cached;
+        }
+
+        this.logger.debug("[GetProduct] Cache MISS - fetching from DB", {
             search: input.search,
         });
 
+        // Cache miss
         let products = await this.productRepo.findAllActive();
 
-        if (input.search && input.search.trim().length > 0) {
+        if (input.search?.trim()) {
             const term = input.search.trim().toLowerCase();
             products = products.filter((p) =>
                 p.name.toLowerCase().includes(term),
             );
         }
+
+        // Jitter: (+/-)10% to spread expiry across time
+        const ttl = CacheTTL.PRODUCT_LIST + Math.floor(Math.random() * 12) - 6;
+        await this.cache.set(cacheKey, products, ttl);
 
         return products;
     }
@@ -89,13 +107,19 @@ export class GetProductUseCase {
      *         or has been soft-deleted.
      */
     async getById(id: string): Promise<Product> {
-        this.logger.debug("[GetProduct] By ID", { id });
+        const cacheKey = CacheKeys.productById(id);
+
+        const cached = await this.cache.get<Product>(cacheKey);
+        if (cached) return cached;
 
         const product = await this.productRepo.findById(id);
         if (!product) {
-            throw new NotFoundError(ErrorKeys.PRODUCT_NOT_FOUND, { id: String(id) });
+            throw new NotFoundError(ErrorKeys.PRODUCT_NOT_FOUND, {
+                id: String(id),
+            });
         }
 
+        await this.cache.set(cacheKey, product, CacheTTL.PRODUCT_SINGLE);
         return product;
     }
 

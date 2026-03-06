@@ -24,7 +24,7 @@
  *   Raw SQL is intentional here - it is more readable and maintainable
  *   for analytical queries than equivalent builder chains would be.
  *
- * Bind parameters ($1, $2 etc.) are always used for user input.
+ * Bind parameters are always used for user input.
  * LIMIT values are validated and cast to integer in the use case before
  * reaching here - no string interpolation of user data anywhere.
  */
@@ -87,7 +87,7 @@ export class ReportRepository {
             summary AS (
                 SELECT
                     status,
-                    CAST(COUNT(*)        AS int)     AS order_count,
+                    CAST(COUNT(*)          AS int)     AS order_count,
                     CAST(SUM(total_amount) AS numeric) AS total_revenue,
                     CAST(AVG(total_amount) AS numeric) AS avg_order_value,
                     CAST(MIN(total_amount) AS numeric) AS min_order_value,

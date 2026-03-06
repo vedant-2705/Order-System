@@ -188,6 +188,16 @@ export const ERROR_CODES = {
         title: ReasonPhrases.FORBIDDEN,
         message: "You do not have permission to perform this action",
     },
+
+    // -------------------------------------------------------------------------
+    // Rate Limiting
+    // -------------------------------------------------------------------------
+    RATE_LIMIT_EXCEEDED: {
+        code: "RATE_LIMIT_EXCEEDED",
+        statusCode: StatusCodes.TOO_MANY_REQUESTS,
+        title: "Too Many Requests",
+        message: "Rate limit exceeded. Please slow down.",
+    },
 } as const;
 
 /**

@@ -98,6 +98,17 @@ const ENV_SPEC: EnvVar[] = [
                 ? null
                 : "NODE_ENV must be one of: development, production, test",
     },
+
+    //  Redis 
+    {
+        key: "REDIS_HOST",
+        required: true,
+    },
+    {
+        key: "REDIS_PORT",
+        required: false,
+        validate: (v) => isNaN(Number(v)) ? "REDIS_PORT must be a number" : null,
+    },
 ];
 
 /**
@@ -114,7 +125,7 @@ export function validateEnv(): void {
         // Missing required variable
         if (value === undefined || value.trim() === "") {
             if (spec.required) {
-                errors.push(`  ✗ ${spec.key} is required but not set`);
+                errors.push(`${spec.key} is required but not set`);
             }
             // Optional + missing = skip validation, that's fine
             continue;
@@ -131,7 +142,7 @@ export function validateEnv(): void {
 
     if (errors.length > 0) {
         console.error(
-            "\n❌ Environment validation failed - server will not start:\n",
+            "\nEnvironment validation failed - server will not start:\n",
         );
         errors.forEach((e) => console.error(e));
         console.error(
@@ -140,7 +151,7 @@ export function validateEnv(): void {
         process.exit(1);
     }
 
-    console.log("✓ Environment variables validated");
+    console.log("Environment variables validated");
 }
 
 export const ENV = {
@@ -155,4 +166,6 @@ export const ENV = {
     JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || "7d",
     PORT: process.env.PORT ? Number(process.env.PORT) : 3000,
     NODE_ENV: process.env.NODE_ENV || "development",
+    REDIS_HOST: process.env.REDIS_HOST!,
+    REDIS_PORT: process.env.REDIS_PORT ? Number(process.env.REDIS_PORT) : 6379,
 }

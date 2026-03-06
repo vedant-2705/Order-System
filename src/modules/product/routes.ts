@@ -25,6 +25,7 @@ import {
     listProductsQuerySchema,
 } from "./schemas.js";
 import { idParamSchema } from "schemas/common.js";
+import { apiRateLimit } from "middleware/RateLimitMiddleware.js";
 
 const router = Router();
 const ctrl = resolveController(ProductController);
@@ -35,12 +36,17 @@ router.get(
     validateQuery(listProductsQuerySchema),
     asyncHandler((req, res) => ctrl().getAll(req, res)),
 );
-router.get("/:id", validateParams(idParamSchema), asyncHandler((req, res) => ctrl().getById(req, res)));
+router.get(
+    "/:id",
+    validateParams(idParamSchema),
+    asyncHandler((req, res) => ctrl().getById(req, res)),
+);
 
 // Admin writes
 router.post(
     "/",
     authMiddleware,
+    apiRateLimit,
     requireRole("admin"),
     validateBody(createProductSchema),
     asyncHandler((req, res) => ctrl().create(req, res)),
@@ -50,6 +56,7 @@ router
     .route("/:id")
     .patch(
         authMiddleware,
+        apiRateLimit,
         requireRole("admin"),
         validateParams(idParamSchema),
         validateBody(updateProductSchema),
@@ -57,6 +64,7 @@ router
     )
     .delete(
         authMiddleware,
+        apiRateLimit,
         requireRole("admin"),
         validateParams(idParamSchema),
         asyncHandler((req, res) => ctrl().delete(req, res)),
